@@ -230,6 +230,38 @@ export const AdminOrdersPage: React.FC = () => {
                   </div>
                 ))}
               </div>
+
+              {(() => {
+                const proofUrl =
+                  selectedOrder.payment_verifications?.[0]?.proof_image_url ||
+                  (selectedOrder.payments?.[0]?.raw_metadata?.proof_image_url as string | undefined);
+                if (!proofUrl) return null;
+                return (
+                  <div className="p-4 border border-[var(--ts-border-subtle)] bg-[var(--ts-bg-elevated)] space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[10px] uppercase tracking-widest text-[var(--ts-accent)]">
+                        Uploaded Payment Screenshot
+                      </p>
+                      <a
+                        href={proofUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[10px] uppercase tracking-widest text-[var(--ts-accent)] hover:underline"
+                      >
+                        <span>Open Full Image</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                    <a href={proofUrl} target="_blank" rel="noopener noreferrer" className="block">
+                      <img
+                        src={proofUrl}
+                        alt="Customer UPI payment screenshot"
+                        className="max-h-64 w-full object-contain border border-[var(--ts-border-subtle)] bg-black/10"
+                      />
+                    </a>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Right: Lifecycle Status, Tracking & Cancellation/Refund Form */}
@@ -397,6 +429,23 @@ export const AdminOrdersPage: React.FC = () => {
                   </td>
                   <td className="p-4 text-right">
                     <div className="inline-flex items-center gap-2">
+                      {(() => {
+                        const proofUrl =
+                          ord.payment_verifications?.[0]?.proof_image_url ||
+                          (ord.payments?.[0]?.raw_metadata?.proof_image_url as string | undefined);
+                        if (!proofUrl) return null;
+                        return (
+                          <a
+                            href={proofUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-[var(--ts-accent)] border border-[var(--ts-accent)]/40 px-2.5 py-1.5 hover:bg-[var(--ts-accent)] hover:text-[var(--ts-on-accent)] transition-colors"
+                          >
+                            <span>Screenshot</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        );
+                      })()}
                       {(ord.payment_status === 'pending_payment' ||
                         ord.payment_status === 'payment_verification') && (
                         <Button

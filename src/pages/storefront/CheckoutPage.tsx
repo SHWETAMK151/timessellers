@@ -26,6 +26,7 @@ import {
   ExternalLink,
   Clock,
   RefreshCw,
+  Upload,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
@@ -37,8 +38,10 @@ import {
   createCryptoPaymentInvoice,
   fetchCustomerOrderById,
   fetchGuestOrderDetails,
+  submitOrderPaymentScreenshot,
   type CryptoInvoiceResponse,
 } from '@/services/orderService';
+import { uploadFileToStorage } from '@/services/storageService';
 import {
   buildGatewayFreeUpiIntentUrl,
   formatINR,
@@ -116,6 +119,9 @@ export const CheckoutPage: React.FC = () => {
   const [upiMarkedPaid, setUpiMarkedPaid] = useState(false);
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [copiedExactAmt, setCopiedExactAmt] = useState(false);
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [isUploadingProof, setIsUploadingProof] = useState(false);
+  const [uploadedProofUrl, setUploadedProofUrl] = useState<string | null>(null);
 
   // Crypto Invoice State
   const [cryptoInvoice, setCryptoInvoice] = useState<CryptoInvoiceResponse['invoice'] | null>(null);
@@ -389,10 +395,22 @@ export const CheckoutPage: React.FC = () => {
                     </h2>
                     <p className="text-xs text-[var(--ts-text-secondary)] max-w-lg mx-auto leading-relaxed">
                       All your contact, delivery, and order details for{' '}
-                      <strong>{formatINR(exactPayableAmount, true)}</strong> have been sent to our
-                      team. Once we verify your UPI payment manually, your order will be confirmed
-                      and prepared for dispatch.
+                      <strong>{formatINR(exactPayableAmount, true)}</strong> along with your payment
+                      screenshot have been sent to our team. Once we verify your UPI payment
+                      manually, your order will be confirmed and prepared for dispatch.
                     </p>
+                    {uploadedProofUrl && (
+                      <div className="pt-2 flex flex-col items-center gap-2">
+                        <a
+                          href={uploadedProofUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs text-[var(--ts-accent)] underline underline-offset-4 hover:opacity-80"
+                        >
+                          View Uploaded Payment Screenshot
+                        </a>
+                      </div>
+                    )}
                   </div>
                   <div className="pt-4 flex flex-wrap justify-center gap-4">
                     <Link
@@ -505,19 +523,87 @@ export const CheckoutPage: React.FC = () => {
                       </div>
 
                       <div className="border border-[var(--ts-border-subtle)] bg-[var(--ts-bg-elevated)] p-6 space-y-4">
-                        <p className="text-xs text-[var(--ts-text-secondary)] leading-relaxed">
-                          Once you have sent the payment from your UPI app, click below to finish.
-                          Our team will manually verify your payment and confirm your order.
-                        </p>
+                        <div className="space-y-1">
+                          <p className="text-[10px] uppercase tracking-[0.22em] text-[var(--ts-accent)]">
+                            Payment Screenshot Required
+                          </p>
+                          <p className="text-xs text-[var(--ts-text-secondary)] leading-relaxed">
+                            Once you have sent the payment from your UPI app, upload the payment
+                            screenshot below. Our team will manually verify it and confirm your
+                            order.
+                          </p>
+                        </div>
+
+                        <label className="block border border-dashed border-[var(--ts-border-strong)] bg-[var(--ts-bg-card)] p-4 text-center cursor-pointer hover:border-[var(--ts-accent)] transition-colors">
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,application/pdf"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0] ?? null;
+                              setError(null);
+                              if (file && file.size > 5 * 1024 * 1024) {
+                                setError('Payment screenshot must be under 5 MB.');
+                                setProofFile(null);
+                                return;
+                              }
+                              setProofFile(file);
+                            }}
+                          />
+                          <div className="flex flex-col items-center gap-1.5">
+                            <Upload className="w-5 h-5 text-[var(--ts-accent)]" />
+                            <span className="text-xs text-[var(--ts-text-primary)] font-medium">
+                              {proofFile ? proofFile.name : 'Choose Payment Screenshot'}
+                            </span>
+                            <span className="text-[10px] text-[var(--ts-text-muted)]">
+                              JPEG, PNG, WEBP or PDF (Max 5 MB)
+                            </span>
+                          </div>
+                        </label>
+
                         <Button
                           type="button"
                           variant="gold"
                           size="lg"
                           className="w-full"
-                          onClick={() => setUpiMarkedPaid(true)}
+                          disabled={!proofFile || isUploadingProof}
+                          isLoading={isUploadingProof}
+                          onClick={async () => {
+                            if (!proofFile || !activeOrder) {
+                              setError('Please select a payment screenshot before continuing.');
+                              return;
+                            }
+                            setError(null);
+                            setIsUploadingProof(true);
+                            try {
+                              const prefix = user
+                                ? user.id
+                                : `guest/${activeOrder.order_id}`;
+                              const uploaded = await uploadFileToStorage(
+                                'payment-proofs',
+                                proofFile,
+                                prefix
+                              );
+                              await submitOrderPaymentScreenshot({
+                                orderId: activeOrder.order_id,
+                                proofImageUrl: uploaded.url,
+                                guestToken: activeOrder.guest_token,
+                              });
+                              setUploadedProofUrl(uploaded.url);
+                              setUpiMarkedPaid(true);
+                            } catch (err) {
+                              setError(
+                                err instanceof Error
+                                  ? err.message
+                                  : 'Failed to upload payment screenshot. Please try again.'
+                              );
+                            } finally {
+                              setIsUploadingProof(false);
+                            }
+                          }}
                           leftIcon={<CheckCircle2 className="w-4 h-4" />}
                         >
-                          I Have Completed Payment
+                          Upload Screenshot & Confirm Order
                         </Button>
                       </div>
                     </div>

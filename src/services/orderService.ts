@@ -204,6 +204,31 @@ export async function submitUpiPaymentVerification(params: {
   };
 }
 
+export async function submitOrderPaymentScreenshot(params: {
+  orderId: string;
+  proofImageUrl: string;
+  guestToken?: string;
+}): Promise<{
+  verification_id: string;
+  order_id: string;
+  proof_image_url: string;
+  status: string;
+}> {
+  const { data, error } = await supabase.rpc('submit_payment_screenshot', {
+    p_order_id: params.orderId,
+    p_proof_image_url: params.proofImageUrl,
+    p_guest_token: params.guestToken ?? null,
+  });
+
+  if (error) throw new Error(error.message);
+  return data as {
+    verification_id: string;
+    order_id: string;
+    proof_image_url: string;
+    status: string;
+  };
+}
+
 export interface CryptoInvoiceResponse {
   payment: Payment;
   invoice: {
