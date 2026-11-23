@@ -23,13 +23,9 @@ import {
   CheckCircle2,
   Copy,
   Check,
-  Upload,
   ExternalLink,
   Clock,
   RefreshCw,
-  Sparkles,
-  ChevronDown,
-  ChevronUp,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
@@ -38,22 +34,17 @@ import { useStoreSettings } from '@/context/StoreSettingsContext';
 import {
   createOrderOnServer,
   getServerCheckoutQuote,
-  submitUpiPaymentVerification,
   createCryptoPaymentInvoice,
   fetchCustomerOrderById,
   fetchGuestOrderDetails,
-  registerGatewayFreeUpiBridge,
-  pollGatewayFreeUpiStatus,
   type CryptoInvoiceResponse,
 } from '@/services/orderService';
-import { uploadFileToStorage } from '@/services/storageService';
 import {
   buildGatewayFreeUpiIntentUrl,
   formatINR,
   INDIAN_STATES,
   isValidIndianPhone,
   isValidIndianPinCode,
-  isValidUtrNumber,
   normalizeIndianPhone,
   cn,
 } from '@/lib/utils';
@@ -120,21 +111,9 @@ export const CheckoutPage: React.FC = () => {
     payment_method: PaymentMethodType;
   } | null>(null);
 
-  // Dynamic Gateway-Free UPI QR Data URL & Auto-Polling State
+  // Dynamic UPI QR Data URL & Payment Confirmation State
   const [dynamicQrDataUrl, setDynamicQrDataUrl] = useState<string>('');
-  const [autoPollStatus, setAutoPollStatus] = useState<
-    'waiting' | 'checking' | 'paid' | 'review' | 'expired'
-  >('waiting');
-  const [autoMatchedUtr, setAutoMatchedUtr] = useState<string | null>(null);
-  const [showManualUtrFallback, setShowManualUtrFallback] = useState(false);
-
-  // Manual UPI Verification Submission Fallback State
-  const [utrNumber, setUtrNumber] = useState('');
-  const [payerUpiId, setPayerUpiId] = useState('');
-  const [customerNote, setCustomerNote] = useState('');
-  const [proofFile, setProofFile] = useState<File | null>(null);
-  const [isSubmittingUpi, setIsSubmittingUpi] = useState(false);
-  const [upiSubmittedSuccess, setUpiSubmittedSuccess] = useState(false);
+  const [upiMarkedPaid, setUpiMarkedPaid] = useState(false);
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [copiedExactAmt, setCopiedExactAmt] = useState(false);
 
@@ -227,13 +206,10 @@ export const CheckoutPage: React.FC = () => {
       .catch(() => {});
   }, [activeOrder, storeSettings.upi_id, storeSettings.upi_display_name]);
 
-  // Gateway-Free UPI & Crypto Real-Time Status Polling (every 12 seconds, matching demo/index.html)
+  // Crypto Order Status Check
   const checkOrderPaymentStatus = useCallback(async () => {
     if (!activeOrder) return;
-    setAutoPollStatus((prev) => (prev === 'paid' ? 'paid' : 'checking'));
-
     try {
-      // 1. Check directly in Supabase database first (works for both guest & authenticated orders)
       const ord = user
         ? await fetchCustomerOrderById(activeOrder.order_id, user.id)
         : activeOrder.guest_token
@@ -245,42 +221,11 @@ export const CheckoutPage: React.FC = () => {
 
       if (ord) {
         setLiveOrderData(ord);
-        if (ord.payment_status === 'confirmed') {
-          setAutoPollStatus('paid');
-          setAutoMatchedUtr(ord.payment_reference || null);
-          return;
-        }
       }
-
-      // 2. If UPI QR, also nudge the Gateway-Free UPI Edge Function / Apps Script bridge
-      if (activeOrder.payment_method === 'upi_qr') {
-        const res = await pollGatewayFreeUpiStatus(
-          activeOrder.order_id,
-          activeOrder.guest_token
-        ).catch(() => null);
-        if (res?.status === 'Paid' || res?.payment_status === 'confirmed') {
-          setAutoPollStatus('paid');
-          setAutoMatchedUtr(res.utr || null);
-          return;
-        } else if (res?.status === 'Expired') {
-          setAutoPollStatus('expired');
-          return;
-        }
-      }
-
-      setAutoPollStatus((prev) => (prev === 'paid' ? 'paid' : 'waiting'));
     } catch {
-      setAutoPollStatus((prev) => (prev === 'paid' ? 'paid' : 'waiting'));
+      // Ignore transient lookup error
     }
   }, [activeOrder, user]);
-
-  useEffect(() => {
-    if (!activeOrder || autoPollStatus === 'paid') return;
-    const interval = setInterval(() => {
-      void checkOrderPaymentStatus();
-    }, 12000);
-    return () => clearInterval(interval);
-  }, [activeOrder, autoPollStatus, checkOrderPaymentStatus]);
 
   const handleAddressSelectChange = (addrId: string) => {
     setSelectedAddressId(addrId);
@@ -364,10 +309,7 @@ export const CheckoutPage: React.FC = () => {
       setActiveOrder(created);
       await clearCart();
 
-      if (paymentMethod === 'upi_qr') {
-        // Non-blocking bridge registration to Google Sheet Apps Script if configured
-        void registerGatewayFreeUpiBridge(created.order_id, created.guest_token).catch(() => {});
-      } else if (paymentMethod === 'crypto') {
+      if (paymentMethod === 'crypto') {
         setIsGeneratingCrypto(true);
         try {
           const invRes = await createCryptoPaymentInvoice(
@@ -390,45 +332,6 @@ export const CheckoutPage: React.FC = () => {
       setError(err instanceof Error ? err.message : 'Order creation failed.');
     } finally {
       setIsPlacingOrder(false);
-    }
-  };
-
-  const handleUpiProofSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!activeOrder) return;
-    setError(null);
-
-    if (!isValidUtrNumber(utrNumber)) {
-      setError('Please enter a valid 12-digit UTR / UPI reference number (alphanumeric, 10-22 characters).');
-      return;
-    }
-
-    setIsSubmittingUpi(true);
-    try {
-      let uploadedProofUrl: string | undefined;
-      if (proofFile) {
-        const up = await uploadFileToStorage(
-          'payment-proofs',
-          proofFile,
-          user ? user.id : `guest/${activeOrder.order_id}`
-        );
-        uploadedProofUrl = up.url;
-      }
-
-      await submitUpiPaymentVerification({
-        orderId: activeOrder.order_id,
-        utrNumber: utrNumber.trim().toUpperCase(),
-        payerUpiId: payerUpiId.trim() || undefined,
-        proofImageUrl: uploadedProofUrl,
-        customerNote: customerNote.trim() || undefined,
-        guestToken: activeOrder.guest_token,
-      });
-
-      setUpiSubmittedSuccess(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to submit UPI UTR verification.');
-    } finally {
-      setIsSubmittingUpi(false);
     }
   };
 
@@ -461,53 +364,46 @@ export const CheckoutPage: React.FC = () => {
               </p>
               <h1 className="font-serif-luxury text-3xl text-[var(--ts-text-primary)]">
                 {activeOrder.payment_method === 'upi_qr'
-                  ? 'Gateway-Free UPI Auto-Confirm Checkout'
+                  ? 'Complete UPI Payment'
                   : 'Cryptocurrency Invoice Settlement'}
               </h1>
             </div>
             <div className="text-left sm:text-right">
               <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--ts-text-muted)]">
-                Unique Order Amount
+                Amount Payable
               </p>
               <p className="font-serif-luxury text-3xl sm:text-4xl text-[var(--ts-accent)]">
                 {formatINR(exactPayableAmount, true)}
               </p>
-              {paisaDiscount > 0 && (
-                <p className="text-[11px] text-emerald-400">
-                  Includes -{formatINR(paisaDiscount, true)} unique paisa code discount (from{' '}
-                  {formatINR(baseOrderAmount)})
-                </p>
-              )}
             </div>
           </div>
 
           {error && <ErrorBanner message={error} />}
 
-          {/* FLOW A: GATEWAY-FREE UPI QR PAYMENT (Unique Paisa Code + Auto-Confirm + Manual UTR Fallback) */}
+          {/* FLOW A: DIRECT UPI QR PAYMENT (No verification form on checkout — admin verifies & confirms manually) */}
           {activeOrder.payment_method === 'upi_qr' && (
             <>
-              {autoPollStatus === 'paid' || liveOrderData?.payment_status === 'confirmed' ? (
-                <div className="p-8 border border-emerald-800/60 bg-emerald-950/25 text-center space-y-5">
-                  <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto" />
+              {upiMarkedPaid ? (
+                <div className="p-8 border border-[var(--ts-accent)]/40 bg-[var(--ts-bg-accent-tint)] text-center space-y-5">
+                  <CheckCircle2 className="w-12 h-12 text-[var(--ts-accent)] mx-auto" />
                   <div className="space-y-2">
-                    <Badge tone="success">Payment Automatically Confirmed</Badge>
+                    <Badge tone="gold">Order Sent to Admin Panel</Badge>
                     <h2 className="font-serif-luxury text-2xl sm:text-3xl text-[var(--ts-text-primary)]">
-                      We Received Your Exact {formatINR(exactPayableAmount, true)} Transfer
+                      Thank You! Order {activeOrder.order_number} Received
                     </h2>
                     <p className="text-xs text-[var(--ts-text-secondary)] max-w-lg mx-auto leading-relaxed">
-                      Your unique paisa-encoded payment for order{' '}
-                      <strong className="text-[var(--ts-text-primary)]">{activeOrder.order_number}</strong> was
-                      matched and verified automatically
-                      {autoMatchedUtr ? ` (UPI Ref / UTR: ${autoMatchedUtr})` : ''}. Inventory has
-                      been allocated to your order.
+                      All your contact, delivery, and order details for{' '}
+                      <strong>{formatINR(exactPayableAmount, true)}</strong> have been sent to our
+                      team. Once we verify your UPI payment manually, your order will be confirmed
+                      and prepared for dispatch.
                     </p>
                   </div>
-                  <div className="pt-3 flex flex-wrap justify-center gap-4">
+                  <div className="pt-4 flex flex-wrap justify-center gap-4">
                     <Link
                       to={`/track-order?order=${encodeURIComponent(activeOrder.order_number)}&phone=${encodeURIComponent(phone)}`}
                     >
                       <Button variant="gold" size="md">
-                        Track Confirmed Order
+                        Track Your Order
                       </Button>
                     </Link>
                     <Link to="/shop">
@@ -517,47 +413,14 @@ export const CheckoutPage: React.FC = () => {
                     </Link>
                   </div>
                 </div>
-              ) : upiSubmittedSuccess ? (
-                <div className="p-8 border border-[var(--ts-accent)]/40 bg-[var(--ts-bg-accent-tint)] text-center space-y-5">
-                  <CheckCircle2 className="w-12 h-12 text-[var(--ts-accent)] mx-auto" />
-                  <div className="space-y-2">
-                    <Badge tone="gold">UTR Queued for Verification</Badge>
-                    <h2 className="font-serif-luxury text-2xl text-[var(--ts-text-primary)]">
-                      UTR Reference Recorded
-                    </h2>
-                    <p className="text-xs text-[var(--ts-text-secondary)] max-w-lg mx-auto leading-relaxed">
-                      Your order <strong>{activeOrder.order_number}</strong> for{' '}
-                      <strong>{formatINR(exactPayableAmount, true)}</strong> and UTR reference{' '}
-                      <strong className="text-[var(--ts-accent)]">{utrNumber.toUpperCase()}</strong> are
-                      logged. It will confirm automatically when the bank credit alert matches or
-                      upon admin review.
-                    </p>
-                  </div>
-                  <div className="pt-4 flex flex-wrap justify-center gap-4">
-                    <Link
-                      to={`/track-order?order=${encodeURIComponent(activeOrder.order_number)}&phone=${encodeURIComponent(phone)}`}
-                    >
-                      <Button variant="gold" size="md">
-                        Track Order Status
-                      </Button>
-                    </Link>
-                    <Link to="/shop">
-                      <Button variant="outline" size="md">
-                        Continue Exploring
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
               ) : (
                 <div className="space-y-8">
-                  {/* Core Gateway-Free UPI Card (Matches demo/index.html & Code.gs UX) */}
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
                     {/* Left: Dynamic Amount-Encoded UPI QR Code */}
                     <div className="md:col-span-5 border border-[var(--ts-accent)]/50 bg-[var(--ts-bg-elevated)] p-6 text-center space-y-4">
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[var(--ts-accent)]/15 border border-[var(--ts-accent)]/40 text-[10px] uppercase tracking-[0.2em] text-[var(--ts-accent)]">
-                        <Sparkles className="w-3 h-3" />
-                        <span>Personal Paisa-Encoded QR</span>
-                      </div>
+                      <p className="text-[10px] uppercase tracking-[0.22em] text-[var(--ts-accent)]">
+                        Scan &amp; Pay via UPI
+                      </p>
 
                       <div className="w-56 h-56 mx-auto bg-white p-3 flex items-center justify-center border border-[var(--ts-accent)]">
                         {dynamicQrDataUrl ? (
@@ -611,11 +474,11 @@ export const CheckoutPage: React.FC = () => {
                       </a>
                     </div>
 
-                    {/* Right: Paisa Order Code Explanation & Live Auto-Reconciliation Status */}
+                    {/* Right: Amount & Direct Confirm Payment Button */}
                     <div className="md:col-span-7 space-y-6">
                       <div className="border border-[var(--ts-accent)]/40 bg-[var(--ts-bg-accent-tint)] p-5 space-y-3">
                         <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--ts-accent)]">
-                          Important • Pay This Exact Decimal Amount
+                          Payable Amount
                         </p>
                         <div className="flex items-center justify-between gap-4">
                           <span className="font-serif-luxury text-4xl text-[var(--ts-text-primary)]">
@@ -639,121 +502,27 @@ export const CheckoutPage: React.FC = () => {
                           </button>
                         </div>
                         <p className="text-xs text-[var(--ts-text-secondary)] leading-relaxed">
-                          The <strong className="text-[var(--ts-accent)]">.{exactPaiseDigits} paise</strong>{' '}
-                          at the end is your personal order code for today — please{' '}
-                          <strong>do not round it</strong>. Scanning the QR code above pre-fills{' '}
-                          <strong>₹{exactPayableAmount.toFixed(2)}</strong> automatically in Google
-                          Pay, PhonePe, Paytm, and BHIM.
+                          Scan the QR code with Google Pay, PhonePe, Paytm, or BHIM and complete
+                          the payment of <strong>₹{exactPayableAmount.toFixed(2)}</strong>. Your
+                          order details have already been recorded for our team.
                         </p>
                       </div>
 
-                      {/* Live Auto-Verification Status Indicator */}
-                      <div className="border border-[var(--ts-border-subtle)] bg-[var(--ts-bg-elevated)] p-5 space-y-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-3">
-                            <RefreshCw
-                              className={cn(
-                                'w-4 h-4 text-[var(--ts-accent)] shrink-0',
-                                autoPollStatus === 'checking' ? 'animate-spin' : 'animate-pulse'
-                              )}
-                            />
-                            <div>
-                              <p className="text-xs font-medium text-[var(--ts-text-primary)]">
-                                Waiting for your payment — Auto-detecting bank credit
-                              </p>
-                              <p className="text-[11px] text-[var(--ts-text-muted)]">
-                                This page checks automatically every 12 seconds and confirms itself
-                                within ~1 minute of payment.
-                              </p>
-                            </div>
-                          </div>
-
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => void checkOrderPaymentStatus()}
-                          >
-                            Check Now
-                          </Button>
-                        </div>
-                      </div>
-
-                      {/* Expandable Manual UTR / Screenshot Fallback */}
-                      <div className="border border-[var(--ts-border-subtle)] bg-[var(--ts-bg-card)]">
-                        <button
+                      <div className="border border-[var(--ts-border-subtle)] bg-[var(--ts-bg-elevated)] p-6 space-y-4">
+                        <p className="text-xs text-[var(--ts-text-secondary)] leading-relaxed">
+                          Once you have sent the payment from your UPI app, click below to finish.
+                          Our team will manually verify your payment and confirm your order.
+                        </p>
+                        <Button
                           type="button"
-                          onClick={() => setShowManualUtrFallback((v) => !v)}
-                          className="w-full px-5 py-3.5 flex items-center justify-between text-left text-xs text-[var(--ts-text-secondary)] hover:text-[var(--ts-text-primary)] cursor-pointer"
+                          variant="gold"
+                          size="lg"
+                          className="w-full"
+                          onClick={() => setUpiMarkedPaid(true)}
+                          leftIcon={<CheckCircle2 className="w-4 h-4" />}
                         >
-                          <span>
-                            Already paid? Submit 12-digit UTR / Receipt manually (Optional Fallback)
-                          </span>
-                          {showManualUtrFallback ? (
-                            <ChevronUp className="w-4 h-4 text-[var(--ts-accent)]" />
-                          ) : (
-                            <ChevronDown className="w-4 h-4 text-[var(--ts-accent)]" />
-                          )}
-                        </button>
-
-                        {showManualUtrFallback && (
-                          <form
-                            onSubmit={handleUpiProofSubmit}
-                            className="p-5 border-t border-[var(--ts-border-subtle)] space-y-4"
-                          >
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              <Input
-                                label="12-Digit UTR / UPI Reference Number *"
-                                required
-                                value={utrNumber}
-                                onChange={(e) => setUtrNumber(e.target.value)}
-                                placeholder="e.g., 432189765412"
-                              />
-                              <Input
-                                label="Your Payer UPI ID (Optional)"
-                                value={payerUpiId}
-                                onChange={(e) => setPayerUpiId(e.target.value)}
-                                placeholder="yourname@okhdfcbank"
-                              />
-                            </div>
-
-                            <div className="space-y-1.5">
-                              <label className="block text-[11px] uppercase tracking-[0.18em] text-[var(--ts-text-secondary)]">
-                                Upload Payment Screenshot (Optional, Max 5MB)
-                              </label>
-                              <label className="flex items-center justify-center gap-2 border border-dashed border-[var(--ts-border-strong)] bg-[var(--ts-bg-card)] p-3 text-xs text-[var(--ts-text-secondary)] hover:border-[var(--ts-accent)] cursor-pointer">
-                                <Upload className="w-4 h-4 text-[var(--ts-accent)]" />
-                                <span>
-                                  {proofFile
-                                    ? proofFile.name
-                                    : 'Select JPEG, PNG, WEBP, or PDF Receipt'}
-                                </span>
-                                <input
-                                  type="file"
-                                  accept="image/jpeg,image/png,image/webp,application/pdf"
-                                  onChange={(e) => setProofFile(e.target.files?.[0] ?? null)}
-                                  className="hidden"
-                                />
-                              </label>
-                            </div>
-
-                            <Input
-                              label="Note for Treasury Desk (Optional)"
-                              value={customerNote}
-                              onChange={(e) => setCustomerNote(e.target.value)}
-                            />
-
-                            <Button
-                              type="submit"
-                              variant="charcoal"
-                              size="md"
-                              className="w-full"
-                              isLoading={isSubmittingUpi}
-                            >
-                              Submit UTR Reference
-                            </Button>
-                          </form>
-                        )}
+                          I Have Completed Payment
+                        </Button>
                       </div>
                     </div>
                   </div>

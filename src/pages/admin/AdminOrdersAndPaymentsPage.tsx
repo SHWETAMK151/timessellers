@@ -396,14 +396,41 @@ export const AdminOrdersPage: React.FC = () => {
                     )}
                   </td>
                   <td className="p-4 text-right">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openOrderModal(ord)}
-                      leftIcon={<Eye className="w-3.5 h-3.5" />}
-                    >
-                      Inspect
-                    </Button>
+                    <div className="inline-flex items-center gap-2">
+                      {(ord.payment_status === 'pending_payment' ||
+                        ord.payment_status === 'payment_verification') && (
+                        <Button
+                          variant="gold"
+                          size="sm"
+                          onClick={async () => {
+                            setError(null);
+                            try {
+                              await adminUpdateOrderStatus({
+                                orderId: ord.id,
+                                newDeliveryStatus: 'confirmed',
+                                note: 'Payment manually verified and order confirmed by administrator',
+                              });
+                              await loadOrders();
+                            } catch (err) {
+                              setError(
+                                err instanceof Error ? err.message : 'Failed to confirm order'
+                              );
+                            }
+                          }}
+                          leftIcon={<CheckCircle2 className="w-3.5 h-3.5" />}
+                        >
+                          Confirm Order
+                        </Button>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openOrderModal(ord)}
+                        leftIcon={<Eye className="w-3.5 h-3.5" />}
+                      >
+                        Inspect
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}

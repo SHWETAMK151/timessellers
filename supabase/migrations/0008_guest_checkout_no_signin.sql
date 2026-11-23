@@ -449,7 +449,148 @@ BEGIN
 END;
 $$;
 
--- 5. Allow guest payment proof uploads into `payment-proofs` bucket under `guest/...`
+-- 5. Allow Admin to directly confirm any pending_payment / payment_verification order
+-- when manually verifying payment in the Admin Panel (`/admin/orders`).
+CREATE OR REPLACE FUNCTION public.admin_update_order_lifecycle(
+  p_order_id UUID,
+  p_new_delivery_status TEXT,
+  p_tracking_number TEXT DEFAULT NULL,
+  p_courier_partner TEXT DEFAULT NULL,
+  p_tracking_url TEXT DEFAULT NULL,
+  p_note TEXT DEFAULT NULL
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_admin_id UUID := auth.uid();
+  v_order RECORD;
+  v_new_payment_status TEXT;
+BEGIN
+  IF NOT public.is_admin(v_admin_id) THEN
+    RAISE EXCEPTION 'Unauthorized: Administrator privileges required.';
+  END IF;
+
+  IF p_new_delivery_status NOT IN (
+    'pending_payment',
+    'payment_verification',
+    'confirmed',
+    'processing',
+    'shipped',
+    'out_for_delivery',
+    'delivered',
+    'cancelled',
+    'refunded'
+  ) THEN
+    RAISE EXCEPTION 'Invalid delivery status: %', p_new_delivery_status;
+  END IF;
+
+  SELECT * INTO v_order
+  FROM public.orders
+  WHERE id = p_order_id
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Order not found.';
+  END IF;
+
+  v_new_payment_status := v_order.payment_status;
+
+  -- When admin moves order to confirmed or any fulfillment stage, mark payment confirmed & deduct inventory
+  IF p_new_delivery_status IN ('confirmed', 'processing', 'shipped', 'out_for_delivery', 'delivered') THEN
+    IF v_order.payment_status <> 'confirmed' THEN
+      v_new_payment_status := 'confirmed';
+      UPDATE public.payments
+      SET status = 'confirmed',
+          confirmed_at = COALESCE(confirmed_at, NOW()),
+          updated_at = NOW()
+      WHERE order_id = v_order.id;
+
+      UPDATE public.payment_verifications
+      SET verification_status = 'approved',
+          verified_by = v_admin_id,
+          verified_at = COALESCE(verified_at, NOW()),
+          admin_remarks = COALESCE(p_note, admin_remarks, 'Manually verified and confirmed by administrator')
+      WHERE order_id = v_order.id AND verification_status = 'pending';
+    END IF;
+
+    IF NOT v_order.inventory_deducted THEN
+      PERFORM public.deduct_order_inventory_internal(v_order.id, v_admin_id);
+    END IF;
+  END IF;
+
+  IF p_new_delivery_status = 'cancelled' THEN
+    PERFORM public.restore_order_inventory_internal(v_order.id, 'order_cancelled_restoration', v_admin_id);
+  ELSIF p_new_delivery_status = 'refunded' THEN
+    PERFORM public.restore_order_inventory_internal(v_order.id, 'order_refunded_restoration', v_admin_id);
+    v_new_payment_status := 'refunded';
+    UPDATE public.payments SET status = 'refunded' WHERE order_id = v_order.id;
+  END IF;
+
+  UPDATE public.orders
+  SET
+    delivery_status = p_new_delivery_status,
+    payment_status = v_new_payment_status,
+    tracking_number = COALESCE(NULLIF(TRIM(p_tracking_number), ''), tracking_number),
+    courier_partner = COALESCE(NULLIF(TRIM(p_courier_partner), ''), courier_partner),
+    tracking_url = COALESCE(NULLIF(TRIM(p_tracking_url), ''), tracking_url),
+    confirmed_at = CASE WHEN v_new_payment_status = 'confirmed' AND confirmed_at IS NULL THEN NOW() ELSE confirmed_at END,
+    shipped_at = CASE WHEN p_new_delivery_status = 'shipped' AND shipped_at IS NULL THEN NOW() ELSE shipped_at END,
+    delivered_at = CASE WHEN p_new_delivery_status = 'delivered' AND delivered_at IS NULL THEN NOW() ELSE delivered_at END,
+    cancelled_at = CASE WHEN p_new_delivery_status = 'cancelled' AND cancelled_at IS NULL THEN NOW() ELSE cancelled_at END,
+    cancellation_reason = CASE WHEN p_new_delivery_status = 'cancelled' THEN COALESCE(p_note, cancellation_reason) ELSE cancellation_reason END,
+    refunded_at = CASE WHEN p_new_delivery_status = 'refunded' AND refunded_at IS NULL THEN NOW() ELSE refunded_at END,
+    refund_reason = CASE WHEN p_new_delivery_status = 'refunded' THEN COALESCE(p_note, refund_reason) ELSE refund_reason END,
+    refunded_amount = CASE WHEN p_new_delivery_status = 'refunded' THEN final_amount ELSE refunded_amount END
+  WHERE id = p_order_id;
+
+  INSERT INTO public.order_status_history (
+    order_id,
+    previous_payment_status,
+    new_payment_status,
+    previous_delivery_status,
+    new_delivery_status,
+    note,
+    changed_by
+  )
+  VALUES (
+    p_order_id,
+    v_order.payment_status,
+    v_new_payment_status,
+    v_order.delivery_status,
+    p_new_delivery_status,
+    COALESCE(NULLIF(TRIM(p_note), ''), 'Order status updated to ' || p_new_delivery_status || ' by administrator'),
+    v_admin_id
+  );
+
+  INSERT INTO public.admin_audit_logs (
+    admin_user_id,
+    action,
+    entity_type,
+    entity_id,
+    previous_state,
+    new_state
+  )
+  VALUES (
+    v_admin_id,
+    'update_order_status',
+    'order',
+    p_order_id::TEXT,
+    jsonb_build_object('delivery_status', v_order.delivery_status, 'payment_status', v_order.payment_status),
+    jsonb_build_object('delivery_status', p_new_delivery_status, 'payment_status', v_new_payment_status, 'tracking_number', p_tracking_number)
+  );
+
+  RETURN jsonb_build_object(
+    'order_id', p_order_id,
+    'delivery_status', p_new_delivery_status,
+    'payment_status', v_new_payment_status
+  );
+END;
+$$;
+
+-- 6. Allow guest payment proof uploads into `payment-proofs` bucket under `guest/...`
 DROP POLICY IF EXISTS "Guest upload payment proof" ON storage.objects;
 CREATE POLICY "Guest upload payment proof"
   ON storage.objects FOR INSERT
