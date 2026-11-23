@@ -68,7 +68,7 @@ const DEFAULT_STORE_SETTINGS: StoreSettings = {
   store_tagline: 'Haute Horlogerie & Luxury Objects',
   active_theme: 'light_luxury_editorial',
   logo_url: null,
-  upi_id: 'shwetanksingh@yesfam',
+  upi_id: 'shw2100@ibl',
   upi_display_name: 'TIMESSELLERS',
   upi_qr_image_url: null,
   upi_payment_instructions:

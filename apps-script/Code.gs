@@ -42,7 +42,7 @@
  */
 
 var CONFIG = {
-  UPI_ID: 'shwetanksingh@yesfam',                    // Your personal or business UPI ID
+  UPI_ID: 'shw2100@ibl',                               // Your personal or business UPI ID
   PAYEE_NAME: 'SHWETANK SINGH',                      // Display name in UPI apps
   STALE_MINUTES: 45,                                 // Unpaid slot reuse window
   BANK_SENDER: 'alerts@yesbank.in',                  // From: address of your bank's credit alerts (or famapp/hdfc/etc.)
