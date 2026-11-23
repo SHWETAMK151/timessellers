@@ -454,15 +454,57 @@ export async function adminAdjustProductInventory(params: {
   if (error) throw new Error(error.message);
 }
 
-// Customers Management
+// Customers Management (Combines registered profiles + guest checkout buyers from orders)
 export async function fetchAdminCustomers(): Promise<(Profile & { orders?: Order[] })[]> {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*, orders(id, order_number, final_amount, payment_status, delivery_status, created_at)')
-    .order('created_at', { ascending: false });
+  const [profilesRes, guestOrdersRes] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('*, orders(id, order_number, final_amount, payment_status, delivery_status, created_at)')
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('orders')
+      .select('id, order_number, final_amount, payment_status, delivery_status, created_at, customer_snapshot, delivery_address_snapshot')
+      .is('user_id', null)
+      .order('created_at', { ascending: false }),
+  ]);
 
-  if (error) throw new Error(error.message);
-  return (data ?? []) as (Profile & { orders?: Order[] })[];
+  if (profilesRes.error) throw new Error(profilesRes.error.message);
+
+  const registered = (profilesRes.data ?? []) as (Profile & { orders?: Order[] })[];
+  const guestMap = new Map<string, Profile & { orders: Order[] }>();
+
+  for (const ord of guestOrdersRes.data ?? []) {
+    const cust = (ord.customer_snapshot || {}) as {
+      full_name?: string;
+      phone?: string;
+      email?: string | null;
+    };
+    const addr = (ord.delivery_address_snapshot || {}) as {
+      full_name?: string;
+      phone?: string;
+      email?: string | null;
+    };
+    const phone = cust.phone || addr.phone || `guest-${ord.id.slice(0, 8)}`;
+    const existing = guestMap.get(phone);
+    if (existing) {
+      existing.orders.push(ord as unknown as Order);
+    } else {
+      guestMap.set(phone, {
+        id: `guest-${phone}`,
+        full_name: cust.full_name || addr.full_name || 'Guest Client',
+        phone,
+        email: cust.email || addr.email || null,
+        avatar_url: null,
+        is_restricted: false,
+        restriction_reason: null,
+        created_at: ord.created_at,
+        updated_at: ord.created_at,
+        orders: [ord as unknown as Order],
+      });
+    }
+  }
+
+  return [...Array.from(guestMap.values()), ...registered];
 }
 
 export async function adminSetCustomerRestriction(

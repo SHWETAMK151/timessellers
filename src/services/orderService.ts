@@ -55,6 +55,7 @@ export async function createOrderOnServer(
   order_id: string;
   order_number: string;
   payment_id: string;
+  guest_token?: string;
   base_amount?: number;
   final_amount: number;
   unique_payable_amount?: number;
@@ -74,6 +75,7 @@ export async function createOrderOnServer(
     order_id: string;
     order_number: string;
     payment_id: string;
+    guest_token?: string;
     base_amount?: number;
     final_amount: number;
     unique_payable_amount?: number;
@@ -85,30 +87,36 @@ export async function createOrderOnServer(
 }
 
 export async function registerGatewayFreeUpiBridge(
-  orderId: string
+  orderId: string,
+  guestToken?: string
 ): Promise<{ ok: boolean; bridged: boolean }> {
   const {
     data: { session },
   } = await supabase.auth.getSession();
-  if (!session?.access_token) return { ok: false, bridged: false };
+
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (session?.access_token) {
+    headers['Authorization'] = `Bearer ${session.access_token}`;
+  }
 
   const endpoint = `${getEdgeFunctionsBaseUrl()}/gateway-free-upi`;
   const response = await fetch(endpoint, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${session.access_token}`,
-    },
+    headers,
     body: JSON.stringify({
       action: 'register_bridge',
       order_id: orderId,
+      guest_token: guestToken,
     }),
   });
   if (!response.ok) return { ok: false, bridged: false };
   return (await response.json()) as { ok: boolean; bridged: boolean };
 }
 
-export async function pollGatewayFreeUpiStatus(orderId: string): Promise<{
+export async function pollGatewayFreeUpiStatus(
+  orderId: string,
+  guestToken?: string
+): Promise<{
   ok: boolean;
   status: 'Pending' | 'Paid' | 'Review' | 'Expired';
   payment_status: string;
@@ -118,20 +126,20 @@ export async function pollGatewayFreeUpiStatus(orderId: string): Promise<{
   const {
     data: { session },
   } = await supabase.auth.getSession();
-  if (!session?.access_token) {
-    throw new Error('Authentication session required');
+
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (session?.access_token) {
+    headers['Authorization'] = `Bearer ${session.access_token}`;
   }
 
   const endpoint = `${getEdgeFunctionsBaseUrl()}/gateway-free-upi`;
   const response = await fetch(endpoint, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${session.access_token}`,
-    },
+    headers,
     body: JSON.stringify({
       action: 'sync_order_status',
       order_id: orderId,
+      guest_token: guestToken,
     }),
   });
 
@@ -148,12 +156,30 @@ export async function pollGatewayFreeUpiStatus(orderId: string): Promise<{
   };
 }
 
+export async function fetchGuestOrderDetails(params: {
+  orderId?: string;
+  guestToken?: string;
+  orderNumber?: string;
+  phone?: string;
+}): Promise<Order | null> {
+  const { data, error } = await supabase.rpc('get_guest_order_details', {
+    p_order_id: params.orderId ?? null,
+    p_guest_token: params.guestToken ?? null,
+    p_order_number: params.orderNumber ?? null,
+    p_phone: params.phone ?? null,
+  });
+
+  if (error) throw new Error(error.message);
+  return (data as Order | null) ?? null;
+}
+
 export async function submitUpiPaymentVerification(params: {
   orderId: string;
   utrNumber: string;
   payerUpiId?: string;
   proofImageUrl?: string;
   customerNote?: string;
+  guestToken?: string;
 }): Promise<{
   verification_id: string;
   order_id: string;
@@ -166,6 +192,7 @@ export async function submitUpiPaymentVerification(params: {
     p_payer_upi_id: params.payerUpiId ?? null,
     p_proof_image_url: params.proofImageUrl ?? null,
     p_customer_note: params.customerNote ?? null,
+    p_guest_token: params.guestToken ?? null,
   });
 
   if (error) throw new Error(error.message);
@@ -192,26 +219,26 @@ export interface CryptoInvoiceResponse {
 
 export async function createCryptoPaymentInvoice(
   orderId: string,
-  cryptoCurrency: string
+  cryptoCurrency: string,
+  guestToken?: string
 ): Promise<CryptoInvoiceResponse> {
   const {
     data: { session },
   } = await supabase.auth.getSession();
 
-  if (!session?.access_token) {
-    throw new Error('Authentication session required to generate a cryptocurrency invoice.');
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (session?.access_token) {
+    headers['Authorization'] = `Bearer ${session.access_token}`;
   }
 
   const endpoint = `${getEdgeFunctionsBaseUrl()}/crypto-create-invoice`;
   const response = await fetch(endpoint, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${session.access_token}`,
-    },
+    headers,
     body: JSON.stringify({
       order_id: orderId,
       crypto_currency: cryptoCurrency,
+      guest_token: guestToken,
     }),
   });
 

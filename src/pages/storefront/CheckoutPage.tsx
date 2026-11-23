@@ -14,7 +14,7 @@
 // ==============================================================================
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import QRCode from 'qrcode';
 import {
   QrCode,
@@ -41,6 +41,7 @@ import {
   submitUpiPaymentVerification,
   createCryptoPaymentInvoice,
   fetchCustomerOrderById,
+  fetchGuestOrderDetails,
   registerGatewayFreeUpiBridge,
   pollGatewayFreeUpiStatus,
   type CryptoInvoiceResponse,
@@ -74,9 +75,8 @@ import type {
 
 export const CheckoutPage: React.FC = () => {
   const { user, profile } = useAuth();
-  const { items, refreshCart } = useCart();
+  const { items, clearCart } = useCart();
   const { storeSettings, shippingSettings } = useStoreSettings();
-  const navigate = useNavigate();
 
   // Saved addresses
   const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
@@ -86,6 +86,7 @@ export const CheckoutPage: React.FC = () => {
   // Delivery Form Fields
   const [fullName, setFullName] = useState(profile?.full_name || '');
   const [phone, setPhone] = useState(profile?.phone || '');
+  const [email, setEmail] = useState(profile?.email || '');
   const [houseBuilding, setHouseBuilding] = useState('');
   const [street, setStreet] = useState('');
   const [landmark, setLandmark] = useState('');
@@ -109,6 +110,7 @@ export const CheckoutPage: React.FC = () => {
   const [activeOrder, setActiveOrder] = useState<{
     order_id: string;
     order_number: string;
+    guest_token?: string;
     base_amount?: number;
     final_amount: number;
     unique_payable_amount?: number;
@@ -227,12 +229,20 @@ export const CheckoutPage: React.FC = () => {
 
   // Gateway-Free UPI & Crypto Real-Time Status Polling (every 12 seconds, matching demo/index.html)
   const checkOrderPaymentStatus = useCallback(async () => {
-    if (!activeOrder || !user) return;
+    if (!activeOrder) return;
     setAutoPollStatus((prev) => (prev === 'paid' ? 'paid' : 'checking'));
 
     try {
-      // 1. Check directly in Supabase database first
-      const ord = await fetchCustomerOrderById(activeOrder.order_id, user.id);
+      // 1. Check directly in Supabase database first (works for both guest & authenticated orders)
+      const ord = user
+        ? await fetchCustomerOrderById(activeOrder.order_id, user.id)
+        : activeOrder.guest_token
+          ? await fetchGuestOrderDetails({
+              orderId: activeOrder.order_id,
+              guestToken: activeOrder.guest_token,
+            })
+          : null;
+
       if (ord) {
         setLiveOrderData(ord);
         if (ord.payment_status === 'confirmed') {
@@ -244,7 +254,10 @@ export const CheckoutPage: React.FC = () => {
 
       // 2. If UPI QR, also nudge the Gateway-Free UPI Edge Function / Apps Script bridge
       if (activeOrder.payment_method === 'upi_qr') {
-        const res = await pollGatewayFreeUpiStatus(activeOrder.order_id).catch(() => null);
+        const res = await pollGatewayFreeUpiStatus(
+          activeOrder.order_id,
+          activeOrder.guest_token
+        ).catch(() => null);
         if (res?.status === 'Paid' || res?.payment_status === 'confirmed') {
           setAutoPollStatus('paid');
           setAutoMatchedUtr(res.utr || null);
@@ -289,11 +302,6 @@ export const CheckoutPage: React.FC = () => {
     e.preventDefault();
     setError(null);
 
-    if (!user) {
-      navigate('/login?redirect=/checkout');
-      return;
-    }
-
     if (!fullName.trim()) {
       setError('Recipient full name is required.');
       return;
@@ -314,6 +322,7 @@ export const CheckoutPage: React.FC = () => {
     const deliverySnapshot: DeliveryAddressSnapshot = {
       full_name: fullName.trim(),
       phone: normalizeIndianPhone(phone),
+      email: email.trim() || null,
       house_building: houseBuilding.trim(),
       street: street.trim(),
       landmark: landmark.trim() || null,
@@ -325,11 +334,19 @@ export const CheckoutPage: React.FC = () => {
 
     setIsPlacingOrder(true);
     try {
-      if (selectedAddressId === 'new' && saveAddressToProfile) {
+      if (user && selectedAddressId === 'new' && saveAddressToProfile) {
         await supabase.from('addresses').insert({
           user_id: user.id,
           label: 'Delivery Address',
-          ...deliverySnapshot,
+          full_name: deliverySnapshot.full_name,
+          phone: deliverySnapshot.phone,
+          house_building: deliverySnapshot.house_building,
+          street: deliverySnapshot.street,
+          landmark: deliverySnapshot.landmark,
+          city: deliverySnapshot.city,
+          state: deliverySnapshot.state,
+          pin_code: deliverySnapshot.pin_code,
+          country: 'India',
           is_default: savedAddresses.length === 0,
         });
       }
@@ -345,15 +362,19 @@ export const CheckoutPage: React.FC = () => {
       );
 
       setActiveOrder(created);
-      await refreshCart();
+      await clearCart();
 
       if (paymentMethod === 'upi_qr') {
         // Non-blocking bridge registration to Google Sheet Apps Script if configured
-        void registerGatewayFreeUpiBridge(created.order_id).catch(() => {});
+        void registerGatewayFreeUpiBridge(created.order_id, created.guest_token).catch(() => {});
       } else if (paymentMethod === 'crypto') {
         setIsGeneratingCrypto(true);
         try {
-          const invRes = await createCryptoPaymentInvoice(created.order_id, selectedCrypto);
+          const invRes = await createCryptoPaymentInvoice(
+            created.order_id,
+            selectedCrypto,
+            created.guest_token
+          );
           setCryptoInvoice(invRes.invoice);
         } catch (cryptoErr) {
           setError(
@@ -374,7 +395,7 @@ export const CheckoutPage: React.FC = () => {
 
   const handleUpiProofSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activeOrder || !user) return;
+    if (!activeOrder) return;
     setError(null);
 
     if (!isValidUtrNumber(utrNumber)) {
@@ -386,7 +407,11 @@ export const CheckoutPage: React.FC = () => {
     try {
       let uploadedProofUrl: string | undefined;
       if (proofFile) {
-        const up = await uploadFileToStorage('payment-proofs', proofFile, user.id);
+        const up = await uploadFileToStorage(
+          'payment-proofs',
+          proofFile,
+          user ? user.id : `guest/${activeOrder.order_id}`
+        );
         uploadedProofUrl = up.url;
       }
 
@@ -396,6 +421,7 @@ export const CheckoutPage: React.FC = () => {
         payerUpiId: payerUpiId.trim() || undefined,
         proofImageUrl: uploadedProofUrl,
         customerNote: customerNote.trim() || undefined,
+        guestToken: activeOrder.guest_token,
       });
 
       setUpiSubmittedSuccess(true);
@@ -477,7 +503,9 @@ export const CheckoutPage: React.FC = () => {
                     </p>
                   </div>
                   <div className="pt-3 flex flex-wrap justify-center gap-4">
-                    <Link to={`/account/orders/${activeOrder.order_id}`}>
+                    <Link
+                      to={`/track-order?order=${encodeURIComponent(activeOrder.order_number)}&phone=${encodeURIComponent(phone)}`}
+                    >
                       <Button variant="gold" size="md">
                         Track Confirmed Order
                       </Button>
@@ -506,7 +534,9 @@ export const CheckoutPage: React.FC = () => {
                     </p>
                   </div>
                   <div className="pt-4 flex flex-wrap justify-center gap-4">
-                    <Link to={`/account/orders/${activeOrder.order_id}`}>
+                    <Link
+                      to={`/track-order?order=${encodeURIComponent(activeOrder.order_number)}&phone=${encodeURIComponent(phone)}`}
+                    >
                       <Button variant="gold" size="md">
                         Track Order Status
                       </Button>
@@ -746,7 +776,9 @@ export const CheckoutPage: React.FC = () => {
                     <strong>{activeOrder.order_number}</strong> is now confirmed and inventory has
                     been allocated.
                   </p>
-                  <Link to={`/account/orders/${activeOrder.order_id}`}>
+                  <Link
+                    to={`/track-order?order=${encodeURIComponent(activeOrder.order_number)}&phone=${encodeURIComponent(phone)}`}
+                  >
                     <Button variant="gold" size="md">
                       View Confirmed Order
                     </Button>
@@ -855,7 +887,8 @@ export const CheckoutPage: React.FC = () => {
                         try {
                           const invRes = await createCryptoPaymentInvoice(
                             activeOrder.order_id,
-                            selectedCrypto
+                            selectedCrypto,
+                            activeOrder.guest_token
                           );
                           setCryptoInvoice(invRes.invoice);
                         } catch (err) {
@@ -869,7 +902,9 @@ export const CheckoutPage: React.FC = () => {
                     >
                       Generate Crypto Invoice
                     </Button>
-                    <Link to={`/account/orders/${activeOrder.order_id}`}>
+                    <Link
+                      to={`/track-order?order=${encodeURIComponent(activeOrder.order_number)}&phone=${encodeURIComponent(phone)}`}
+                    >
                       <Button variant="outline" size="sm">
                         View Order Details
                       </Button>
@@ -982,7 +1017,7 @@ export const CheckoutPage: React.FC = () => {
               Delivery Information (India)
             </h2>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
               <Input
                 label="Recipient Full Name *"
                 required
@@ -997,6 +1032,13 @@ export const CheckoutPage: React.FC = () => {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="+91 98765 43210"
+              />
+              <Input
+                label="Email Address (Optional)"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="client@example.com"
               />
             </div>
 
@@ -1048,7 +1090,7 @@ export const CheckoutPage: React.FC = () => {
               placeholder="Nearby prominent building or street"
             />
 
-            {selectedAddressId === 'new' && (
+            {user && selectedAddressId === 'new' && (
               <label className="flex items-center gap-2.5 text-xs text-[var(--ts-text-secondary)] cursor-pointer">
                 <input
                   type="checkbox"

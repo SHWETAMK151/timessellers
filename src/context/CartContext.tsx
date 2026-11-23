@@ -26,6 +26,7 @@ interface LocalCartEntry {
 }
 
 const LOCAL_CART_STORAGE_KEY = 'timessellers_guest_bag_v1';
+const LOCAL_WISHLIST_STORAGE_KEY = 'timessellers_guest_wishlist_v1';
 
 interface CartContextValue {
   items: ActiveCartItem[];
@@ -201,8 +202,28 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [user, ensureUserCartId]);
 
   const loadWishlist = useCallback(async () => {
-    if (!isSupabaseConfigured || !user) {
+    if (!isSupabaseConfigured) {
       setWishlistProducts([]);
+      return;
+    }
+
+    if (!user) {
+      try {
+        const raw = localStorage.getItem(LOCAL_WISHLIST_STORAGE_KEY);
+        const ids = raw ? (JSON.parse(raw) as string[]) : [];
+        if (!Array.isArray(ids) || ids.length === 0) {
+          setWishlistProducts([]);
+          return;
+        }
+        const { data } = await supabase
+          .from('products')
+          .select('*, categories(*), inventory(*)')
+          .in('id', ids)
+          .eq('status', 'active');
+        setWishlistProducts((data ?? []) as Product[]);
+      } catch {
+        setWishlistProducts([]);
+      }
       return;
     }
 
@@ -357,11 +378,17 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const toggleWishlist = async (product: Product): Promise<boolean> => {
+    const exists = wishlistProducts.some((p) => p.id === product.id);
     if (!user) {
-      throw new Error('Please sign in with your phone number to save pieces to your wishlist.');
+      const currentIds = wishlistProducts.map((p) => p.id);
+      const nextIds = exists
+        ? currentIds.filter((id) => id !== product.id)
+        : [product.id, ...currentIds];
+      localStorage.setItem(LOCAL_WISHLIST_STORAGE_KEY, JSON.stringify(nextIds));
+      await loadWishlist();
+      return !exists;
     }
     const wishlistId = await ensureUserWishlistId(user.id);
-    const exists = wishlistProducts.some((p) => p.id === product.id);
 
     if (exists) {
       await supabase

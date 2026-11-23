@@ -210,6 +210,7 @@ export interface WishlistItem {
 export interface DeliveryAddressSnapshot {
   full_name: string;
   phone: string;
+  email?: string | null;
   house_building: string;
   street: string;
   landmark?: string | null;
@@ -259,7 +260,8 @@ export interface OrderStatusHistory {
 export interface Order {
   id: string;
   order_number: string;
-  user_id: string;
+  user_id: string | null;
+  guest_token?: string | null;
   customer_snapshot: CustomerSnapshot;
   delivery_address_snapshot: DeliveryAddressSnapshot;
   subtotal_amount: number;

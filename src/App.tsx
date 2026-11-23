@@ -37,6 +37,9 @@ const CartPage = lazy(() =>
 const CheckoutPage = lazy(() =>
   import('@/pages/storefront/CheckoutPage').then((m) => ({ default: m.CheckoutPage }))
 );
+const TrackOrderPage = lazy(() =>
+  import('@/pages/storefront/TrackOrderPage').then((m) => ({ default: m.TrackOrderPage }))
+);
 const LoginPage = lazy(() =>
   import('@/pages/storefront/LoginPage').then((m) => ({ default: m.LoginPage }))
 );
@@ -169,6 +172,8 @@ export const App: React.FC = () => {
                   <Route path="/shop/:category" element={<ShopPage />} />
                   <Route path="/product/:slug" element={<ProductDetailPage />} />
                   <Route path="/cart" element={<CartPage />} />
+                  <Route path="/checkout" element={<CheckoutPage />} />
+                  <Route path="/track-order" element={<TrackOrderPage />} />
                   <Route path="/login" element={<LoginPage />} />
 
                   {/* Legal & Trust Pages */}
@@ -178,16 +183,6 @@ export const App: React.FC = () => {
                   <Route path="/return-policy" element={<ReturnPolicyPage />} />
                   <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
                   <Route path="/terms" element={<TermsPage />} />
-
-                  {/* Protected Checkout */}
-                  <Route
-                    path="/checkout"
-                    element={
-                      <ProtectedCustomerRoute>
-                        <CheckoutPage />
-                      </ProtectedCustomerRoute>
-                    }
-                  />
 
                   {/* Protected Customer Dashboard */}
                   <Route

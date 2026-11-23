@@ -15,6 +15,7 @@ const corsHeaders = {
 interface InvoiceRequest {
   order_id: string;
   crypto_currency: string;
+  guest_token?: string;
 }
 
 interface ProviderInvoiceResult {
@@ -142,29 +143,17 @@ Deno.serve(async (req: Request) => {
       throw new Error('Server Supabase environment variables are not configured.');
     }
 
+    let authedUserId: string | null = null;
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Missing Authorization header.' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Verify caller identity using their JWT
-    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-
-    const {
-      data: { user },
-      error: authError,
-    } = await userClient.auth.getUser();
-
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Invalid or expired authentication session.' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const tokenVal = authHeader.replace('Bearer ', '').trim();
+      if (tokenVal && tokenVal !== supabaseAnonKey) {
+        const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+          global: { headers: { Authorization: authHeader } },
+        });
+        const { data: userData } = await userClient.auth.getUser();
+        authedUserId = userData?.user?.id ?? null;
+      }
     }
 
     const body = (await req.json()) as InvoiceRequest;
@@ -177,17 +166,25 @@ Deno.serve(async (req: Request) => {
 
     const adminClient = createClient(supabaseUrl, supabaseServiceRoleKey);
 
-    // Fetch order and verify ownership + server-side final_amount
+    // Fetch order and verify ownership (via JWT or guest_token) + server-side final_amount
     const { data: order, error: orderError } = await adminClient
       .from('orders')
       .select('*')
       .eq('id', body.order_id)
-      .eq('user_id', user.id)
       .single();
 
     if (orderError || !order) {
       return new Response(JSON.stringify({ error: 'Order not found or access denied.' }), {
         status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const ownsViaUser = Boolean(authedUserId && order.user_id === authedUserId);
+    const ownsViaGuest = Boolean(body.guest_token && order.guest_token && order.guest_token === body.guest_token);
+    if (!ownsViaUser && !ownsViaGuest) {
+      return new Response(JSON.stringify({ error: 'Unauthorized order access.' }), {
+        status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }

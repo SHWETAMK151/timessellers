@@ -104,33 +104,11 @@ Deno.serve(async (req: Request) => {
     }
 
     // ==========================================================================
-    // AUTHENTICATED CUSTOMER ACTIONS (`register_bridge` & `sync_order_status`)
+    // CUSTOMER / GUEST ACTIONS (`register_bridge` & `sync_order_status`)
+    // Authorizes via either Supabase user JWT OR matching `orders.guest_token`.
     // ==========================================================================
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Missing Authorization header.' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-
-    const {
-      data: { user },
-      error: authError,
-    } = await userClient.auth.getUser();
-
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Invalid authentication session.' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
     const orderId = String(body.order_id || '');
+    const guestToken = String(body.guest_token || '').trim();
     if (!orderId) {
       return new Response(JSON.stringify({ error: 'order_id is required.' }), {
         status: 400,
@@ -138,16 +116,37 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    let authedUserId: string | null = null;
+    const authHeader = req.headers.get('Authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const tokenVal = authHeader.replace('Bearer ', '').trim();
+      if (tokenVal && tokenVal !== supabaseAnonKey) {
+        const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+          global: { headers: { Authorization: authHeader } },
+        });
+        const { data: userData } = await userClient.auth.getUser();
+        authedUserId = userData?.user?.id ?? null;
+      }
+    }
+
     const { data: order, error: orderErr } = await adminClient
       .from('orders')
       .select('*, payments(*)')
       .eq('id', orderId)
-      .eq('user_id', user.id)
       .single();
 
     if (orderErr || !order) {
       return new Response(JSON.stringify({ error: 'Order not found.' }), {
         status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const ownsViaUser = Boolean(authedUserId && order.user_id === authedUserId);
+    const ownsViaGuestToken = Boolean(guestToken && order.guest_token && order.guest_token === guestToken);
+    if (!ownsViaUser && !ownsViaGuestToken) {
+      return new Response(JSON.stringify({ error: 'Unauthorized order access.' }), {
+        status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }

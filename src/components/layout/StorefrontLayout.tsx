@@ -9,12 +9,11 @@ import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   Search,
   ShoppingBag,
-  User,
+  Package,
   Menu,
   X,
   ChevronDown,
   ShieldCheck,
-  Heart,
   Database,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -26,8 +25,8 @@ import { formatINR } from '@/lib/utils';
 import type { Category } from '@/types/database';
 
 export const StorefrontLayout: React.FC = () => {
-  const { user, isAdmin } = useAuth();
-  const { itemCount, wishlistProductIds } = useCart();
+  const { isAdmin } = useAuth();
+  const { itemCount } = useCart();
   const { storeSettings, shippingSettings } = useStoreSettings();
   const navigate = useNavigate();
 
@@ -209,7 +208,7 @@ export const StorefrontLayout: React.FC = () => {
             )}
           </nav>
 
-          {/* Header Actions: Search, Wishlist, Account, Cart */}
+          {/* Header Actions: Search, Track Order, Cart */}
           <div className="flex items-center gap-3 sm:gap-5">
             <button
               type="button"
@@ -221,26 +220,13 @@ export const StorefrontLayout: React.FC = () => {
             </button>
 
             <Link
-              to="/account/wishlist"
-              className="relative p-2 text-[var(--ts-text-secondary)] hover:text-[var(--ts-accent)] transition-colors hidden sm:inline-flex"
-              aria-label="Wishlist"
-            >
-              <Heart className="w-4 h-4" />
-              {wishlistProductIds.length > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[var(--ts-border-strong)] text-[var(--ts-accent)] text-[9px] font-semibold flex items-center justify-center">
-                  {wishlistProductIds.length}
-                </span>
-              )}
-            </Link>
-
-            <Link
-              to={user ? '/account' : '/login'}
+              to="/track-order"
               className="p-2 text-[var(--ts-text-secondary)] hover:text-[var(--ts-accent)] transition-colors flex items-center gap-2"
-              aria-label="Account"
+              aria-label="Track Order"
             >
-              <User className="w-4 h-4" />
+              <Package className="w-4 h-4" />
               <span className="hidden xl:inline text-[11px] uppercase tracking-[0.18em]">
-                {user ? 'Account' : 'Sign In'}
+                Track Order
               </span>
             </Link>
 
@@ -300,18 +286,18 @@ export const StorefrontLayout: React.FC = () => {
                 All Collections
               </Link>
               <Link
-                to={user ? '/account' : '/login'}
+                to="/track-order"
                 onClick={() => setMobileMenuOpen(false)}
                 className="text-xs uppercase tracking-[0.2em] text-[var(--ts-text-primary)] py-1.5"
               >
-                {user ? 'My Account Dashboard' : 'Client Login (Phone OTP)'}
+                Track Order
               </Link>
               <Link
-                to="/account/wishlist"
+                to="/cart"
                 onClick={() => setMobileMenuOpen(false)}
                 className="text-xs uppercase tracking-[0.2em] text-[var(--ts-text-primary)] py-1.5"
               >
-                Wishlist ({wishlistProductIds.length})
+                Shopping Bag ({itemCount})
               </Link>
               {isAdmin && (
                 <Link
@@ -399,30 +385,30 @@ export const StorefrontLayout: React.FC = () => {
               </ul>
             </div>
 
-            {/* Col 3: Client Account */}
+            {/* Col 3: Client Services */}
             <div className="space-y-4">
               <h4 className="text-[11px] uppercase tracking-[0.22em] text-[var(--ts-text-primary)]">
                 Client Services
               </h4>
               <ul className="space-y-2.5 text-xs">
                 <li>
-                  <Link to="/account" className="hover:text-[var(--ts-accent)] transition-colors">
-                    My Account Overview
+                  <Link to="/track-order" className="hover:text-[var(--ts-accent)] transition-colors">
+                    Track Your Order
                   </Link>
                 </li>
                 <li>
-                  <Link to="/account/orders" className="hover:text-[var(--ts-accent)] transition-colors">
-                    Order History &amp; Tracking
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/account/addresses" className="hover:text-[var(--ts-accent)] transition-colors">
-                    Saved Delivery Addresses
+                  <Link to="/shop" className="hover:text-[var(--ts-accent)] transition-colors">
+                    Browse Collections
                   </Link>
                 </li>
                 <li>
                   <Link to="/cart" className="hover:text-[var(--ts-accent)] transition-colors">
                     Shopping Bag
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/checkout" className="hover:text-[var(--ts-accent)] transition-colors">
+                    Express Checkout
                   </Link>
                 </li>
                 <li>
