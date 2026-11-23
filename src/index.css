@@ -1,0 +1,126 @@
+@import "tailwindcss";
+
+@layer base {
+  :root,
+  [data-theme="light_luxury_editorial"] {
+    --font-serif: 'Cormorant Garamond', Georgia, serif;
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --ts-bg-deep: #F3ECE1;
+    --ts-bg-main: #FAF7F2;
+    --ts-bg-card: #FFFFFF;
+    --ts-bg-elevated: #F4EFE6;
+    --ts-bg-subtle: #EAE2D6;
+    --ts-bg-accent-tint: #F5ECD9;
+    --ts-border-subtle: #E6DEC8;
+    --ts-border-strong: #D5C7AD;
+    --ts-text-primary: #1C1917;
+    --ts-text-secondary: #575049;
+    --ts-text-muted: #82786E;
+    --ts-text-faint: #A89E93;
+    --ts-accent: #9E7732;
+    --ts-accent-hover: #836022;
+    --ts-on-accent: #FAF7F2;
+  }
+
+  [data-theme="obsidian_gold"] {
+    --ts-bg-deep: #050505;
+    --ts-bg-main: #070707;
+    --ts-bg-card: #0C0C0C;
+    --ts-bg-elevated: #121212;
+    --ts-bg-subtle: #181818;
+    --ts-bg-accent-tint: #16130D;
+    --ts-border-subtle: #1E1E1E;
+    --ts-border-strong: #2A2A2A;
+    --ts-text-primary: #F5F5F0;
+    --ts-text-secondary: #C2C2BC;
+    --ts-text-muted: #8E8E88;
+    --ts-text-faint: #5E5E58;
+    --ts-accent: #C5A059;
+    --ts-accent-hover: #D4AF37;
+    --ts-on-accent: #070707;
+  }
+
+  [data-theme="midnight_royal_platinum"] {
+    --ts-bg-deep: #050911;
+    --ts-bg-main: #080E1A;
+    --ts-bg-card: #0D1627;
+    --ts-bg-elevated: #132038;
+    --ts-bg-subtle: #192947;
+    --ts-bg-accent-tint: #16243D;
+    --ts-border-subtle: #1E2D4A;
+    --ts-border-strong: #2D426B;
+    --ts-text-primary: #F2F6FC;
+    --ts-text-secondary: #C4D1E5;
+    --ts-text-muted: #889BB8;
+    --ts-text-faint: #586B8A;
+    --ts-accent: #C8D6EA;
+    --ts-accent-hover: #E2ECF8;
+    --ts-on-accent: #080E1A;
+  }
+
+  [data-theme="emerald_gold_heritage"] {
+    --ts-bg-deep: #05110C;
+    --ts-bg-main: #071710;
+    --ts-bg-card: #0C2118;
+    --ts-bg-elevated: #112D21;
+    --ts-bg-subtle: #173A2B;
+    --ts-bg-accent-tint: #192B1B;
+    --ts-border-subtle: #1C3D2E;
+    --ts-border-strong: #2A5742;
+    --ts-text-primary: #F6F4EE;
+    --ts-text-secondary: #CCC8BC;
+    --ts-text-muted: #8D9E94;
+    --ts-text-faint: #5A7064;
+    --ts-accent: #D4AF37;
+    --ts-accent-hover: #E5C352;
+    --ts-on-accent: #071710;
+  }
+
+  [data-theme="minimalist_monochrome"] {
+    --ts-bg-deep: #F2F2F2;
+    --ts-bg-main: #FFFFFF;
+    --ts-bg-card: #FAFAFA;
+    --ts-bg-elevated: #F3F3F3;
+    --ts-bg-subtle: #E8E8E8;
+    --ts-bg-accent-tint: #EFEFEF;
+    --ts-border-subtle: #E5E5E5;
+    --ts-border-strong: #CCCCCC;
+    --ts-text-primary: #0A0A0A;
+    --ts-text-secondary: #3D3D3D;
+    --ts-text-muted: #6E6E6E;
+    --ts-text-faint: #9E9E9E;
+    --ts-accent: #111111;
+    --ts-accent-hover: #2E2E2E;
+    --ts-on-accent: #FFFFFF;
+  }
+
+  html {
+    font-family: var(--font-sans);
+    background-color: var(--ts-bg-main);
+    color: var(--ts-text-primary);
+    scroll-behavior: smooth;
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
+
+  h1, h2, h3, h4, .font-serif-luxury {
+    font-family: var(--font-serif);
+  }
+}
+
+/* Custom sleek luxury scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--ts-bg-main);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--ts-border-strong);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ts-accent);
+}
