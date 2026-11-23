@@ -34,6 +34,9 @@ AS $$
 DECLARE
   v_user_id UUID := auth.uid();
   v_profile RECORD;
+  v_profile_name TEXT := NULL;
+  v_profile_phone TEXT := NULL;
+  v_profile_email TEXT := NULL;
   v_quote JSONB;
   v_line JSONB;
   v_order_id UUID;
@@ -56,8 +59,13 @@ BEGIN
     FROM public.profiles
     WHERE id = v_user_id;
 
-    IF FOUND AND v_profile.is_restricted THEN
-      RAISE EXCEPTION 'Your account is restricted from placing orders.';
+    IF FOUND THEN
+      IF v_profile.is_restricted THEN
+        RAISE EXCEPTION 'Your account is restricted from placing orders.';
+      END IF;
+      v_profile_name := NULLIF(TRIM(v_profile.full_name), '');
+      v_profile_phone := NULLIF(TRIM(v_profile.phone), '');
+      v_profile_email := NULLIF(TRIM(v_profile.email), '');
     END IF;
   END IF;
 
@@ -131,9 +139,9 @@ BEGIN
     v_guest_token,
     jsonb_build_object(
       'user_id', v_user_id,
-      'full_name', COALESCE(NULLIF(v_profile.full_name, ''), v_customer_name),
-      'phone', COALESCE(NULLIF(v_profile.phone, ''), v_customer_phone),
-      'email', COALESCE(v_customer_email, v_profile.email),
+      'full_name', COALESCE(v_customer_name, v_profile_name),
+      'phone', COALESCE(v_customer_phone, v_profile_phone),
+      'email', COALESCE(v_customer_email, v_profile_email),
       'is_guest', (v_user_id IS NULL)
     ),
     p_delivery_address,
