@@ -342,8 +342,6 @@ export const CheckoutPage: React.FC = () => {
     const exactPayableAmount = Number(
       activeOrder.unique_payable_amount ?? activeOrder.final_amount
     );
-    const paisaDiscount = Number(activeOrder.paisa_code_discount ?? 0);
-    const baseOrderAmount = Number(activeOrder.base_amount ?? exactPayableAmount + paisaDiscount);
 
     const upiDeepLink = buildGatewayFreeUpiIntentUrl({
       upiId: storeSettings.upi_id,
@@ -351,8 +349,6 @@ export const CheckoutPage: React.FC = () => {
       exactAmount: exactPayableAmount,
       orderNumber: activeOrder.order_number,
     });
-
-    const exactPaiseDigits = exactPayableAmount.toFixed(2).split('.')[1];
 
     return (
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-12 space-y-8">
