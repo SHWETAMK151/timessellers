@@ -11,6 +11,12 @@
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
     Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
 
+[[headers]]
+  for = "/vault-ts-9x4k/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noarchive"
+    Cache-Control = "no-store, no-cache, must-revalidate"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { fetchAdminAnalytics, fetchAdminRecentOrders } from '@/services/adminService';
-import { formatDate, formatINR, cn } from '@/lib/utils';
+import { formatDate, formatINR, cn, ADMIN_BASE_PATH, ADMIN_LOGIN_PATH } from '@/lib/utils';
 import { Badge, Button, EmptyState, ErrorBanner } from '@/components/ui/LuxuryPrimitives';
 import type { AdminDashboardAnalytics, Order, SalesSeriesPoint } from '@/types/database';
 
@@ -36,20 +36,20 @@ export const AdminLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const navLinks = [
-    { to: '/admin', label: 'Overview', icon: LayoutDashboard, end: true },
-    { to: '/admin/products', label: 'Products', icon: Package, end: false },
-    { to: '/admin/categories', label: 'Categories', icon: FolderTree, end: false },
-    { to: '/admin/orders', label: 'Orders', icon: ShoppingCart, end: false },
-    { to: '/admin/payments', label: 'Payments & UPI', icon: CreditCard, end: false },
-    { to: '/admin/inventory', label: 'Inventory', icon: Boxes, end: false },
-    { to: '/admin/customers', label: 'Customers', icon: Users, end: false },
-    { to: '/admin/analytics', label: 'Sales Analytics', icon: BarChart3, end: false },
-    { to: '/admin/settings', label: 'Store Settings', icon: Settings, end: false },
+    { to: ADMIN_BASE_PATH, label: 'Overview', icon: LayoutDashboard, end: true },
+    { to: `${ADMIN_BASE_PATH}/products`, label: 'Products', icon: Package, end: false },
+    { to: `${ADMIN_BASE_PATH}/categories`, label: 'Categories', icon: FolderTree, end: false },
+    { to: `${ADMIN_BASE_PATH}/orders`, label: 'Orders', icon: ShoppingCart, end: false },
+    { to: `${ADMIN_BASE_PATH}/payments`, label: 'Payments & UPI', icon: CreditCard, end: false },
+    { to: `${ADMIN_BASE_PATH}/inventory`, label: 'Inventory', icon: Boxes, end: false },
+    { to: `${ADMIN_BASE_PATH}/customers`, label: 'Customers', icon: Users, end: false },
+    { to: `${ADMIN_BASE_PATH}/analytics`, label: 'Sales Analytics', icon: BarChart3, end: false },
+    { to: `${ADMIN_BASE_PATH}/settings`, label: 'Store Settings', icon: Settings, end: false },
   ];
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/admin/login');
+    navigate(ADMIN_LOGIN_PATH);
   };
 
   return (
@@ -83,7 +83,7 @@ export const AdminLayout: React.FC = () => {
         <div className="p-6 space-y-6">
           <div className="border-b border-[var(--ts-border-subtle)] pb-5">
             <Link
-              to="/admin"
+              to={ADMIN_BASE_PATH}
               className="font-serif-luxury text-2xl tracking-[0.24em] text-[var(--ts-text-primary)] block"
             >
               TIMESSELLERS
@@ -328,7 +328,7 @@ export const AdminOverviewPage: React.FC = () => {
             {analytics?.total_products ?? 0} Products
           </p>
           <Link
-            to="/admin/inventory"
+            to={`${ADMIN_BASE_PATH}/inventory`}
             className="text-[11px] text-amber-400 hover:underline flex items-center gap-1"
           >
             <AlertTriangle className="w-3 h-3" />
@@ -384,7 +384,7 @@ export const AdminOverviewPage: React.FC = () => {
         <div className="lg:col-span-5 border border-[var(--ts-border-subtle)] bg-[var(--ts-bg-card)] p-6 space-y-4">
           <div className="flex items-center justify-between border-b border-[var(--ts-border-subtle)] pb-3">
             <h3 className="font-serif-luxury text-xl text-[var(--ts-text-primary)]">Best-Selling Creations</h3>
-            <Link to="/admin/products" className="text-xs text-[var(--ts-accent)] hover:underline">
+            <Link to={`${ADMIN_BASE_PATH}/products`} className="text-xs text-[var(--ts-accent)] hover:underline">
               Manage →
             </Link>
           </div>
@@ -429,7 +429,7 @@ export const AdminOverviewPage: React.FC = () => {
         <div className="lg:col-span-7 border border-[var(--ts-border-subtle)] bg-[var(--ts-bg-card)] p-6 space-y-4">
           <div className="flex items-center justify-between border-b border-[var(--ts-border-subtle)] pb-3">
             <h3 className="font-serif-luxury text-xl text-[var(--ts-text-primary)]">Recent Transactions</h3>
-            <Link to="/admin/orders" className="text-xs text-[var(--ts-accent)] hover:underline">
+            <Link to={`${ADMIN_BASE_PATH}/orders`} className="text-xs text-[var(--ts-accent)] hover:underline">
               All Orders →
             </Link>
           </div>

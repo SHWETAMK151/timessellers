@@ -17,6 +17,7 @@ import {
   ProtectedAdminRoute,
 } from '@/components/auth/RouteGuards';
 import { StorefrontLayout } from '@/components/layout/StorefrontLayout';
+import { ADMIN_BASE_PATH, ADMIN_LOGIN_PATH } from '@/lib/utils';
 import { Button } from '@/components/ui/LuxuryPrimitives';
 
 // Lazy-loaded route modules for performance & optimal bundle splitting
@@ -225,10 +226,10 @@ export const App: React.FC = () => {
                   />
                 </Route>
 
-                {/* EXPERIENCE C: RESTRICTED ADMINISTRATIVE DASHBOARD */}
-                <Route path="/admin/login" element={<AdminLoginPage />} />
+                {/* EXPERIENCE C: HIDDEN ADMINISTRATIVE DASHBOARD */}
+                <Route path={ADMIN_LOGIN_PATH} element={<AdminLoginPage />} />
                 <Route
-                  path="/admin"
+                  path={ADMIN_BASE_PATH}
                   element={
                     <ProtectedAdminRoute>
                       <AdminLayout />

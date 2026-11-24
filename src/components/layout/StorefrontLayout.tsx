@@ -13,10 +13,8 @@ import {
   Menu,
   X,
   ChevronDown,
-  ShieldCheck,
   Database,
 } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import { useStoreSettings } from '@/context/StoreSettingsContext';
 import { isSupabaseConfigured } from '@/lib/supabase';
@@ -25,7 +23,6 @@ import { formatINR } from '@/lib/utils';
 import type { Category } from '@/types/database';
 
 export const StorefrontLayout: React.FC = () => {
-  const { isAdmin } = useAuth();
   const { itemCount } = useCart();
   const { storeSettings, shippingSettings } = useStoreSettings();
   const navigate = useNavigate();
@@ -196,16 +193,6 @@ export const StorefrontLayout: React.FC = () => {
             >
               Concierge
             </NavLink>
-
-            {isAdmin && (
-              <Link
-                to="/admin"
-                className="flex items-center gap-1.5 text-xs uppercase tracking-[0.18em] text-[var(--ts-accent)] border border-[var(--ts-accent)]/40 px-3 py-1.5 hover:bg-[var(--ts-accent)] hover:text-[var(--ts-on-accent)] transition-colors"
-              >
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Admin Panel</span>
-              </Link>
-            )}
           </nav>
 
           {/* Header Actions: Search, Track Order, Cart */}
@@ -299,15 +286,6 @@ export const StorefrontLayout: React.FC = () => {
               >
                 Shopping Bag ({itemCount})
               </Link>
-              {isAdmin && (
-                <Link
-                  to="/admin"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="text-xs uppercase tracking-[0.2em] text-[var(--ts-accent)] py-1.5"
-                >
-                  Administrative Control Panel
-                </Link>
-              )}
             </div>
 
             {categories.length > 0 && (

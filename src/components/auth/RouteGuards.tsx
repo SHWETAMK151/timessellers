@@ -7,6 +7,7 @@ import React from 'react';
 import { Navigate, useLocation, Link } from 'react-router-dom';
 import { ShieldAlert, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { ADMIN_LOGIN_PATH } from '@/lib/utils';
 import { Button } from '@/components/ui/LuxuryPrimitives';
 
 export const ProtectedCustomerRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -63,7 +64,7 @@ export const ProtectedAdminRoute: React.FC<{ children: React.ReactNode }> = ({ c
   }
 
   if (!user) {
-    return <Navigate to={`/admin/login?redirect=${encodeURIComponent(location.pathname)}`} replace />;
+    return <Navigate to={`${ADMIN_LOGIN_PATH}?redirect=${encodeURIComponent(location.pathname)}`} replace />;
   }
 
   if (!isAdmin) {
@@ -82,7 +83,7 @@ export const ProtectedAdminRoute: React.FC<{ children: React.ReactNode }> = ({ c
             Row Level Security.
           </p>
           <div className="pt-2 flex flex-wrap justify-center gap-3">
-            <Link to="/admin/login">
+            <Link to={ADMIN_LOGIN_PATH}>
               <Button variant="gold" size="sm">
                 Sign In with Admin Username
               </Button>

@@ -165,3 +165,10 @@ export function sanitizeRedirectPath(rawPath: string | null | undefined, fallbac
   }
   return fallback;
 }
+
+const rawAdminPath = (import.meta.env.VITE_ADMIN_PATH as string | undefined)?.trim();
+export const ADMIN_BASE_PATH =
+  rawAdminPath && rawAdminPath.startsWith('/') && rawAdminPath !== '/admin'
+    ? rawAdminPath.replace(/\/+$/, '')
+    : '/vault-ts-9x4k';
+export const ADMIN_LOGIN_PATH = `${ADMIN_BASE_PATH}/login`;
