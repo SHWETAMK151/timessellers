@@ -8,14 +8,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Phone, ShieldCheck, ArrowRight, RotateCcw } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { isValidIndianPhone, normalizeIndianPhone } from '@/lib/utils';
+import { isValidIndianPhone, normalizeIndianPhone, sanitizeRedirectPath } from '@/lib/utils';
 import { Button, ErrorBanner, Input } from '@/components/ui/LuxuryPrimitives';
 
 export const LoginPage: React.FC = () => {
   const { user, sendPhoneOtp, verifyPhoneOtp } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const redirectTo = searchParams.get('redirect') || '/account';
+  const redirectTo = sanitizeRedirectPath(searchParams.get('redirect'), '/account');
 
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [phoneInput, setPhoneInput] = useState('');

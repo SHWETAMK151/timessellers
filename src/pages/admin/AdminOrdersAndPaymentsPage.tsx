@@ -26,7 +26,7 @@ import {
   fetchAdminAllPayments,
   fetchAdminWebhookEvents,
 } from '@/services/adminService';
-import { formatDate, formatINR } from '@/lib/utils';
+import { formatDate, formatINR, sanitizeHttpUrl } from '@/lib/utils';
 import {
   Badge,
   Button,
@@ -232,9 +232,10 @@ export const AdminOrdersPage: React.FC = () => {
               </div>
 
               {(() => {
-                const proofUrl =
+                const proofUrl = sanitizeHttpUrl(
                   selectedOrder.payment_verifications?.[0]?.proof_image_url ||
-                  (selectedOrder.payments?.[0]?.raw_metadata?.proof_image_url as string | undefined);
+                    (selectedOrder.payments?.[0]?.raw_metadata?.proof_image_url as string | undefined)
+                );
                 if (!proofUrl) return null;
                 return (
                   <div className="p-4 border border-[var(--ts-border-subtle)] bg-[var(--ts-bg-elevated)] space-y-3">
@@ -430,9 +431,10 @@ export const AdminOrdersPage: React.FC = () => {
                   <td className="p-4 text-right">
                     <div className="inline-flex items-center gap-2">
                       {(() => {
-                        const proofUrl =
+                        const proofUrl = sanitizeHttpUrl(
                           ord.payment_verifications?.[0]?.proof_image_url ||
-                          (ord.payments?.[0]?.raw_metadata?.proof_image_url as string | undefined);
+                            (ord.payments?.[0]?.raw_metadata?.proof_image_url as string | undefined)
+                        );
                         if (!proofUrl) return null;
                         return (
                           <a
@@ -657,9 +659,9 @@ export const AdminPaymentsPage: React.FC = () => {
                     </p>
                   </div>
 
-                  {verif.proof_image_url && (
+                  {sanitizeHttpUrl(verif.proof_image_url) && (
                     <a
-                      href={verif.proof_image_url}
+                      href={sanitizeHttpUrl(verif.proof_image_url)!}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 text-xs uppercase tracking-widest text-[var(--ts-accent)] border border-[var(--ts-accent)]/40 px-3 py-1.5 hover:bg-[var(--ts-accent)] hover:text-[var(--ts-on-accent)]"

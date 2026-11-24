@@ -27,7 +27,7 @@ import {
   submitUpiPaymentVerification,
 } from '@/services/orderService';
 import { uploadFileToStorage } from '@/services/storageService';
-import { formatDate, formatINR, isValidUtrNumber, cn } from '@/lib/utils';
+import { formatDate, formatINR, isValidUtrNumber, cn, sanitizeHttpUrl } from '@/lib/utils';
 import {
   Badge,
   Button,
@@ -374,9 +374,9 @@ export const OrderTrackingPage: React.FC = () => {
                 {order.courier_partner ? `${order.courier_partner} • ` : ''}
                 AWB: <strong className="text-[var(--ts-accent)] font-mono">{order.tracking_number}</strong>
               </span>
-              {order.tracking_url && (
+              {sanitizeHttpUrl(order.tracking_url) && (
                 <a
-                  href={order.tracking_url}
+                  href={sanitizeHttpUrl(order.tracking_url)!}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-[var(--ts-accent)] hover:underline inline-flex items-center gap-1"

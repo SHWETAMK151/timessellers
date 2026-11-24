@@ -141,3 +141,27 @@ export const INDIAN_STATES = [
   'Lakshadweep',
   'Puducherry',
 ] as const;
+
+export function sanitizeHttpUrl(rawUrl: string | null | undefined): string | null {
+  if (!rawUrl) return null;
+  const trimmed = rawUrl.trim();
+  if (!trimmed) return null;
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+      return parsed.toString();
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export function sanitizeRedirectPath(rawPath: string | null | undefined, fallback: string): string {
+  if (!rawPath) return fallback;
+  const trimmed = rawPath.trim();
+  if (trimmed.startsWith('/') && !trimmed.startsWith('//') && !trimmed.startsWith('/\\')) {
+    return trimmed;
+  }
+  return fallback;
+}

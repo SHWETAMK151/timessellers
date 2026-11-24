@@ -8,13 +8,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { ShieldCheck, Lock, User, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { sanitizeRedirectPath } from '@/lib/utils';
 import { Button, ErrorBanner, Input } from '@/components/ui/LuxuryPrimitives';
 
 export const AdminLoginPage: React.FC = () => {
   const { user, isAdmin, signInAdminWithPassword } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const redirectTo = searchParams.get('redirect') || '/admin';
+  const redirectTo = sanitizeRedirectPath(searchParams.get('redirect'), '/admin');
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
