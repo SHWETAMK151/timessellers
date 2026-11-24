@@ -53,7 +53,7 @@ export const AdminLayout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--ts-bg-main)] text-[var(--ts-text-primary)] flex flex-col lg:flex-row">
+    <div className="min-h-screen bg-[var(--ts-bg-main)] text-[var(--ts-text-primary)] flex flex-col lg:flex-row overflow-x-clip">
       {/* Mobile Admin Topbar */}
       <div className="lg:hidden bg-[var(--ts-bg-card)] border-b border-[var(--ts-border-subtle)] px-4 py-3.5 flex items-center justify-between">
         <div className="flex items-center gap-3">

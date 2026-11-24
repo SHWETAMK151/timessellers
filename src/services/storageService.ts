@@ -48,15 +48,59 @@ export function validateUploadFile(file: File, bucket: StorageBucketName): void 
   }
 }
 
+async function compressImageIfBeneficial(file: File, bucket: StorageBucketName): Promise<File> {
+  if (
+    bucket === 'product-videos' ||
+    !file.type.startsWith('image/') ||
+    file.type === 'image/svg+xml' ||
+    typeof document === 'undefined'
+  ) {
+    return file;
+  }
+
+  try {
+    const bitmap = await createImageBitmap(file);
+    const maxDim = bucket === 'avatars' ? 512 : 1600;
+    const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
+    const width = Math.max(1, Math.round(bitmap.width * scale));
+    const height = Math.max(1, Math.round(bitmap.height * scale));
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      bitmap.close();
+      return file;
+    }
+
+    ctx.drawImage(bitmap, 0, 0, width, height);
+    bitmap.close();
+
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, 'image/webp', 0.82)
+    );
+    if (!blob || blob.size >= file.size) {
+      return file;
+    }
+
+    const webpName = file.name.replace(/\.[^/.]+$/, '') + '.webp';
+    return new File([blob], webpName, { type: 'image/webp' });
+  } catch {
+    return file;
+  }
+}
+
 export async function uploadFileToStorage(
   bucket: StorageBucketName,
   file: File,
   folderPrefix?: string
 ): Promise<{ path: string; url: string }> {
   validateUploadFile(file, bucket);
+  const processedFile = await compressImageIfBeneficial(file, bucket);
 
-  const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-  const safeBaseName = file.name
+  const ext = processedFile.name.split('.').pop()?.toLowerCase() || 'jpg';
+  const safeBaseName = processedFile.name
     .replace(/\.[^/.]+$/, '')
     .toLowerCase()
     .replace(/[^a-z0-9-_]/g, '-')
@@ -65,10 +109,10 @@ export async function uploadFileToStorage(
   const uniqueName = `${Date.now()}-${ crypto.randomUUID().slice(0, 8) }-${safeBaseName}.${ext}`;
   const objectPath = folderPrefix ? `${folderPrefix}/${uniqueName}` : uniqueName;
 
-  const { error: uploadError } = await supabase.storage.from(bucket).upload(objectPath, file, {
+  const { error: uploadError } = await supabase.storage.from(bucket).upload(objectPath, processedFile, {
     cacheControl: '3600',
     upsert: false,
-    contentType: file.type,
+    contentType: processedFile.type,
   });
 
   if (uploadError) {

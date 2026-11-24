@@ -104,7 +104,12 @@ export const ContactPage: React.FC = () => {
                 <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--ts-text-muted)]">
                   Direct Telephone
                 </p>
-                <p className="text-sm text-[var(--ts-text-primary)]">{storeSettings.contact_phone}</p>
+                <a
+                  href={`tel:${(storeSettings.contact_phone || '').replace(/[^\d+]/g, '')}`}
+                  className="text-sm text-[var(--ts-text-primary)] hover:text-[var(--ts-accent)] transition-colors"
+                >
+                  {storeSettings.contact_phone}
+                </a>
               </div>
             </div>
 
@@ -114,7 +119,12 @@ export const ContactPage: React.FC = () => {
                 <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--ts-text-muted)]">
                   Electronic Mail
                 </p>
-                <p className="text-sm text-[var(--ts-text-primary)]">{storeSettings.contact_email}</p>
+                <a
+                  href={`mailto:${storeSettings.contact_email}`}
+                  className="text-sm text-[var(--ts-text-primary)] hover:text-[var(--ts-accent)] transition-colors break-all"
+                >
+                  {storeSettings.contact_email}
+                </a>
               </div>
             </div>
 

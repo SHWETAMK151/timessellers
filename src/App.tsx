@@ -6,8 +6,8 @@
 // C. Restricted Administrative Dashboard (/admin, /admin/products, /admin/categories, /admin/orders, /admin/payments, /admin/inventory, /admin/customers, /admin/analytics, /admin/settings)
 // ==============================================================================
 
-import React, { Suspense, lazy } from 'react';
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import React, { Suspense, lazy, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { AuthProvider } from '@/context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
@@ -17,8 +17,8 @@ import {
   ProtectedAdminRoute,
 } from '@/components/auth/RouteGuards';
 import { StorefrontLayout } from '@/components/layout/StorefrontLayout';
+import { NotFoundPage } from '@/pages/storefront/NotFoundPage';
 import { ADMIN_BASE_PATH, ADMIN_LOGIN_PATH } from '@/lib/utils';
-import { Button } from '@/components/ui/LuxuryPrimitives';
 
 // Lazy-loaded route modules for performance & optimal bundle splitting
 const LandingPage = lazy(() =>
@@ -158,9 +158,109 @@ const PageLoader: React.FC = () => (
   </div>
 );
 
+const ROUTE_META: Record<string, { title: string; description: string }> = {
+  '/': {
+    title: 'TIMESSELLERS | Haute Horlogerie & Luxury Maison',
+    description:
+      'Discover precision chronographs, Italian leather goods, rare extrait de parfum, titanium eyewear, and bespoke objects across India.',
+  },
+  '/shop': {
+    title: 'Collections | TIMESSELLERS',
+    description:
+      'Explore the curated TIMESSELLERS catalog of luxury watches, eyewear, fragrances, leather goods, and acoustic instruments.',
+  },
+  '/cart': {
+    title: 'Shopping Bag | TIMESSELLERS',
+    description: 'Review your selected luxury items and proceed to express checkout.',
+  },
+  '/checkout': {
+    title: 'Express Checkout | TIMESSELLERS',
+    description: 'Complete your TIMESSELLERS order securely via UPI QR or cryptocurrency.',
+  },
+  '/track-order': {
+    title: 'Track Order | TIMESSELLERS',
+    description: 'Check live delivery milestones and tracking details for your TIMESSELLERS order.',
+  },
+  '/about': {
+    title: 'About Maison | TIMESSELLERS',
+    description: 'Learn about TIMESSELLERS provenance, quality inspection, and pan-India delivery.',
+  },
+  '/contact': {
+    title: 'Private Concierge | TIMESSELLERS',
+    description: 'Contact the TIMESSELLERS client concierge desk for order support and inquiries.',
+  },
+  '/shipping-policy': {
+    title: 'Shipping & Delivery Policy | TIMESSELLERS',
+    description: 'Pan-India insured delivery timelines and complimentary shipping thresholds.',
+  },
+  '/return-policy': {
+    title: 'Return & Refund Policy | TIMESSELLERS',
+    description: '7-day inspection window, return eligibility, and refund processing details.',
+  },
+  '/privacy-policy': {
+    title: 'Privacy Policy | TIMESSELLERS',
+    description: 'How TIMESSELLERS protects your personal order and contact information.',
+  },
+  '/terms': {
+    title: 'Terms & Conditions | TIMESSELLERS',
+    description: 'Terms of service, pricing, and settlement policies for TIMESSELLERS.',
+  },
+};
+
+const RouteMetaManager: React.FC = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    const isAdminRoute = pathname.startsWith(ADMIN_BASE_PATH);
+    const matched =
+      ROUTE_META[pathname] ||
+      (pathname.startsWith('/shop/')
+        ? ROUTE_META['/shop']
+        : pathname.startsWith('/product/')
+          ? {
+              title: 'Creation Dossier | TIMESSELLERS',
+              description: 'Inspect specifications, imagery, video, and availability at TIMESSELLERS.',
+            }
+          : isAdminRoute
+            ? {
+                title: 'Vault Console | TIMESSELLERS',
+                description: 'Restricted administrative console.',
+              }
+            : {
+                title: 'Page Not Found | TIMESSELLERS',
+                description: 'The requested page could not be found on TIMESSELLERS.',
+              });
+
+    document.title = matched.title;
+
+    let metaDesc = document.querySelector('meta[name="description"]');
+    if (!metaDesc) {
+      metaDesc = document.createElement('meta');
+      metaDesc.setAttribute('name', 'description');
+      document.head.appendChild(metaDesc);
+    }
+    metaDesc.setAttribute('content', matched.description);
+
+    let metaRobots = document.querySelector('meta[name="robots"]');
+    if (isAdminRoute) {
+      if (!metaRobots) {
+        metaRobots = document.createElement('meta');
+        metaRobots.setAttribute('name', 'robots');
+        document.head.appendChild(metaRobots);
+      }
+      metaRobots.setAttribute('content', 'noindex, nofollow');
+    } else if (metaRobots) {
+      metaRobots.remove();
+    }
+  }, [pathname]);
+
+  return null;
+};
+
 export const App: React.FC = () => {
   return (
     <BrowserRouter>
+      <RouteMetaManager />
       <StoreSettingsProvider>
         <AuthProvider>
           <CartProvider>
@@ -203,27 +303,7 @@ export const App: React.FC = () => {
                   </Route>
 
                   {/* 404 Fallback */}
-                  <Route
-                    path="*"
-                    element={
-                      <div className="max-w-xl mx-auto px-4 py-24 text-center space-y-5">
-                        <p className="text-[10px] uppercase tracking-[0.3em] text-[var(--ts-accent)]">
-                          404 • Page Not Found
-                        </p>
-                        <h1 className="font-serif-luxury text-4xl text-[var(--ts-text-primary)]">
-                          The Requested Destination Does Not Exist
-                        </h1>
-                        <p className="text-xs text-[var(--ts-text-muted)]">
-                          Return to the TIMESSELLERS storefront to explore our active collections.
-                        </p>
-                        <Link to="/">
-                          <Button variant="gold" size="md">
-                            Return Home
-                          </Button>
-                        </Link>
-                      </div>
-                    }
-                  />
+                  <Route path="*" element={<NotFoundPage />} />
                 </Route>
 
                 {/* EXPERIENCE C: HIDDEN ADMINISTRATIVE DASHBOARD */}

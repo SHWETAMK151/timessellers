@@ -21,8 +21,9 @@ export const LandingPage: React.FC = () => {
         {/* Luxury Background Photography with Vignette */}
         <div className="absolute inset-0 z-0">
           <img
-            src="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=2000&q=85"
+            src="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fm=webp&fit=crop&w=1400&q=75"
             alt="TIMESSELLERS Haute Horlogerie"
+            loading="eager"
             className="w-full h-full object-cover object-center opacity-25 scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-[var(--ts-bg-main)] via-[var(--ts-bg-main)]/85 to-transparent" />
@@ -102,8 +103,9 @@ export const LandingPage: React.FC = () => {
             <div className="relative border border-[var(--ts-border-strong)] bg-[var(--ts-bg-card)] p-3">
               <div className="aspect-[4/5] overflow-hidden bg-[var(--ts-bg-elevated)]">
                 <img
-                  src="https://images.unsplash.com/photo-1523170335258-f5ed11844a49?auto=format&fit=crop&w=1200&q=85"
+                  src="https://images.unsplash.com/photo-1523170335258-f5ed11844a49?auto=format&fm=webp&fit=crop&w=900&q=75"
                   alt="Luxury Chronograph Timepiece"
+                  loading="eager"
                   className="w-full h-full object-cover"
                 />
               </div>

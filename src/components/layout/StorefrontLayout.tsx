@@ -55,8 +55,8 @@ export const StorefrontLayout: React.FC = () => {
   return (
     <div className="min-h-screen bg-[var(--ts-bg-main)] text-[var(--ts-text-primary)] flex flex-col overflow-x-clip">
       {/* Top Complimentary Shipping Announcement Bar */}
-      <div className="bg-[var(--ts-bg-elevated)] border-b border-[var(--ts-border-subtle)] px-4 py-2 text-center">
-        <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--ts-accent)]">
+      <div className="bg-[var(--ts-bg-elevated)] border-b border-[var(--ts-border-subtle)] px-3 sm:px-4 py-2 text-center">
+        <p className="text-[10px] uppercase tracking-[0.14em] sm:tracking-[0.24em] text-[var(--ts-accent)]">
           Complimentary Insured Pan-India Delivery on Orders Above{' '}
           {formatINR(shippingSettings.free_shipping_threshold)} • UPI &amp; Crypto Accepted
         </p>
@@ -286,6 +286,20 @@ export const StorefrontLayout: React.FC = () => {
               >
                 Shopping Bag ({itemCount})
               </Link>
+              <Link
+                to="/about"
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-xs uppercase tracking-[0.2em] text-[var(--ts-text-primary)] py-1.5"
+              >
+                Maison
+              </Link>
+              <Link
+                to="/contact"
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-xs uppercase tracking-[0.2em] text-[var(--ts-text-primary)] py-1.5"
+              >
+                Concierge
+              </Link>
             </div>
 
             {categories.length > 0 && (
@@ -312,7 +326,7 @@ export const StorefrontLayout: React.FC = () => {
       </header>
 
       {/* Main Route Content */}
-      <main className="flex-1">
+      <main className="flex-1 min-w-0 overflow-x-clip">
         <Outlet />
       </main>
 
@@ -333,9 +347,27 @@ export const StorefrontLayout: React.FC = () => {
                 and acoustic instruments. Every creation is inspected and dispatched with insured
                 pan-India white-glove delivery.
               </p>
-              <div className="pt-2 text-xs text-[var(--ts-text-secondary)] space-y-1">
-                <p>{storeSettings.contact_phone}</p>
-                <p>{storeSettings.contact_email}</p>
+              <div className="pt-2 text-xs text-[var(--ts-text-secondary)] space-y-1.5">
+                {storeSettings.contact_phone && (
+                  <p>
+                    <a
+                      href={`tel:${storeSettings.contact_phone.replace(/[^\d+]/g, '')}`}
+                      className="hover:text-[var(--ts-accent)] transition-colors"
+                    >
+                      {storeSettings.contact_phone}
+                    </a>
+                  </p>
+                )}
+                {storeSettings.contact_email && (
+                  <p>
+                    <a
+                      href={`mailto:${storeSettings.contact_email}`}
+                      className="hover:text-[var(--ts-accent)] transition-colors break-all"
+                    >
+                      {storeSettings.contact_email}
+                    </a>
+                  </p>
+                )}
               </div>
             </div>
 
