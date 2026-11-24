@@ -17,6 +17,8 @@ import {
   ArrowDown,
   X,
   Search,
+  Instagram,
+  Sparkles,
 } from 'lucide-react';
 import {
   fetchAllAdminProducts,
@@ -26,7 +28,9 @@ import {
   deleteAdminProduct,
   saveAdminCategory,
   deleteAdminCategory,
+  syncInstagramProducts,
   type UpsertProductInput,
+  type InstagramSyncResult,
 } from '@/services/adminService';
 import { uploadFileToStorage } from '@/services/storageService';
 import { extractInventory, formatINR, slugify } from '@/lib/utils';
@@ -54,6 +58,9 @@ export const AdminProductsPage: React.FC = () => {
   const [showEditor, setShowEditor] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isSyncingInstagram, setIsSyncingInstagram] = useState(false);
+  const [igSyncResult, setIgSyncResult] = useState<InstagramSyncResult | null>(null);
+  const [showIgGuide, setShowIgGuide] = useState(false);
 
   // Comprehensive Product Editor State
   const [editId, setEditId] = useState<string | undefined>(undefined);
@@ -326,15 +333,99 @@ export const AdminProductsPage: React.FC = () => {
             Products ({products.length})
           </h1>
         </div>
-        <Button
-          variant="gold"
-          size="md"
-          onClick={openNewProductModal}
-          leftIcon={<Plus className="w-4 h-4" />}
-        >
-          Create New Product
-        </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            variant="outline"
+            size="md"
+            isLoading={isSyncingInstagram}
+            onClick={async () => {
+              setError(null);
+              setIgSyncResult(null);
+              setIsSyncingInstagram(true);
+              try {
+                const res = await syncInstagramProducts(12);
+                setIgSyncResult(res);
+                await loadData();
+              } catch (err) {
+                setError(err instanceof Error ? err.message : 'Instagram AI sync failed');
+              } finally {
+                setIsSyncingInstagram(false);
+              }
+            }}
+            leftIcon={<Instagram className="w-4 h-4" />}
+          >
+            Sync Instagram (AI)
+          </Button>
+          <Button
+            variant="outline"
+            size="md"
+            onClick={() => setShowIgGuide((v) => !v)}
+            leftIcon={<Sparkles className="w-4 h-4" />}
+          >
+            IG Setup
+          </Button>
+          <Button
+            variant="gold"
+            size="md"
+            onClick={openNewProductModal}
+            leftIcon={<Plus className="w-4 h-4" />}
+          >
+            Create New Product
+          </Button>
+        </div>
       </div>
+
+      {showIgGuide && (
+        <div className="border border-[var(--ts-accent)]/40 bg-[var(--ts-bg-elevated)] p-6 space-y-3 text-xs text-[var(--ts-text-secondary)]">
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--ts-accent)] font-medium">
+              Instagram Graph API + Gemini AI Auto-Sync Setup
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowIgGuide(false)}
+              className="text-[var(--ts-text-muted)] hover:text-[var(--ts-text-primary)] cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <p>
+            Deploy the <code className="text-[var(--ts-accent)]">instagram-ai-sync</code> Edge Function and add these secrets in{' '}
+            <strong>Supabase Dashboard → Edge Functions → Secrets</strong>:
+          </p>
+          <ul className="list-disc pl-5 space-y-1">
+            <li><code>IG_USER_ID</code> — Your Instagram Business/Creator Account ID</li>
+            <li><code>IG_ACCESS_TOKEN</code> — Long-lived Instagram Graph API access token</li>
+            <li><code>GEMINI_API_KEY</code> — Google Gemini API key (extracts title, brand, INR price, category &amp; specs from captions)</li>
+            <li><code>SERPER_API_KEY</code> (optional) — Google Image Search key for extra public product photos when Reels have no photo</li>
+            <li><code>IG_SYNC_CRON_SECRET</code> (optional) — Secret header <code>x-cron-secret</code> for scheduled auto-sync</li>
+          </ul>
+          <p className="text-[var(--ts-text-muted)]">
+            Every fetched Reel/Post uses its Reel cover (<code>thumbnail_url</code>) + public product photos, mirrors them to Supabase Storage, and saves the item as a <strong>Draft (inactive)</strong> here so you can review and publish live.
+          </p>
+        </div>
+      )}
+
+      {igSyncResult && (
+        <div className="border border-[var(--ts-accent)]/50 bg-[var(--ts-bg-accent-tint)] p-5 space-y-2 text-xs">
+          <div className="flex items-center justify-between">
+            <p className="font-medium text-[var(--ts-text-primary)]">
+              Instagram AI Sync Complete: {igSyncResult.imported_count} Draft(s) Imported •{' '}
+              {igSyncResult.skipped_count} Skipped • {igSyncResult.error_count} Error(s)
+            </p>
+            <button
+              type="button"
+              onClick={() => setIgSyncResult(null)}
+              className="text-[var(--ts-text-muted)] hover:text-[var(--ts-text-primary)] cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <p className="text-[var(--ts-text-muted)]">
+            Filter by <strong>Inactive</strong> status below to review and publish your newly imported Instagram drafts.
+          </p>
+        </div>
+      )}
 
       {error && <ErrorBanner message={error} />}
 
