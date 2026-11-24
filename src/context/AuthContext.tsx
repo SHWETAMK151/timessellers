@@ -168,6 +168,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     if (error || !data.user) {
+      await supabase.rpc('record_admin_login_failure', { p_identifier: cleanInput });
       throw new Error('Invalid administrator username or password.');
     }
 
@@ -185,8 +186,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (!hasAdminRole) {
       await supabase.auth.signOut();
+      await supabase.rpc('record_admin_login_failure', { p_identifier: cleanInput });
       throw new Error('Unauthorized: This account does not have administrative clearance.');
     }
+
+    await supabase.rpc('clear_admin_login_failures', { p_identifier: cleanInput });
   };
 
   const updateAdminCredentials = async (newUsername: string, newPassword?: string) => {

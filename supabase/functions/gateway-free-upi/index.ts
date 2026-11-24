@@ -19,11 +19,24 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers':
-    'authorization, x-client-info, apikey, content-type, x-gateway-free-secret',
-};
+const ALLOWED_ORIGINS = new Set([
+  'https://timeseller.work.gd',
+  'https://www.timeseller.work.gd',
+  'https://timesellers-dun.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:4173',
+]);
+
+function getCorsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('origin') || '';
+  const allowedOrigin = ALLOWED_ORIGINS.has(origin) ? origin : 'https://timeseller.work.gd';
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Vary': 'Origin',
+    'Access-Control-Allow-Headers':
+      'authorization, x-client-info, apikey, content-type, x-gateway-free-secret',
+  };
+}
 
 function timingSafeEqualString(a: string, b: string): boolean {
   const cleanA = a.trim();
@@ -37,6 +50,7 @@ function timingSafeEqualString(a: string, b: string): boolean {
 }
 
 Deno.serve(async (req: Request) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
