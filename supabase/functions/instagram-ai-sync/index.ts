@@ -322,8 +322,11 @@ Deno.serve(async (req: Request) => {
       slug: string;
     }>;
 
-    // 2. Fetch recent Reels & Posts from Instagram Graph API
-    const igEndpoint = `https://graph.instagram.com/v21.0/${encodeURIComponent(igUserId)}/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,children{id,media_type,media_url,thumbnail_url}&limit=${limit}&access_token=${encodeURIComponent(igAccessToken)}`;
+    // 2. Fetch recent Reels & Posts from Instagram / Meta Graph API
+    const graphHost = igAccessToken.startsWith('IG')
+      ? 'https://graph.instagram.com'
+      : 'https://graph.facebook.com';
+    const igEndpoint = `${graphHost}/v21.0/${encodeURIComponent(igUserId)}/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,children{id,media_type,media_url,thumbnail_url}&limit=${limit}&access_token=${encodeURIComponent(igAccessToken)}`;
     const igRes = await fetch(igEndpoint);
     if (!igRes.ok) {
       const igErr = await igRes.text();
