@@ -71,6 +71,7 @@ export interface UpsertProductInput {
   scheduled_discount_start?: string | null;
   scheduled_discount_end?: string | null;
   main_image_url: string;
+  video_url?: string | null;
   is_featured: boolean;
   is_new_arrival: boolean;
   is_best_seller: boolean;
@@ -118,6 +119,7 @@ export async function saveAdminProduct(input: UpsertProductInput): Promise<Produ
     scheduled_discount_start: input.scheduled_discount_start || null,
     scheduled_discount_end: input.scheduled_discount_end || null,
     main_image_url: input.main_image_url.trim(),
+    video_url: input.video_url?.trim() || null,
     is_featured: input.is_featured,
     is_new_arrival: input.is_new_arrival,
     is_best_seller: input.is_best_seller,

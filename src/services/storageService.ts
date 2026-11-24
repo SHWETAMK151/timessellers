@@ -7,24 +7,34 @@ import { supabase } from '@/lib/supabase';
 
 export type StorageBucketName =
   | 'product-images'
+  | 'product-videos'
   | 'category-images'
   | 'store-assets'
   | 'avatars'
   | 'payment-proofs';
 
 const ALLOWED_IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
+const ALLOWED_VIDEO_MIME_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
 const ALLOWED_PROOF_MIME_TYPES = [...ALLOWED_IMAGE_MIME_TYPES, 'application/pdf'];
 const MAX_STANDARD_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
 const MAX_AVATAR_FILE_BYTES = 2 * 1024 * 1024; // 2 MB
+const MAX_VIDEO_FILE_BYTES = 50 * 1024 * 1024; // 50 MB
 
 export function validateUploadFile(file: File, bucket: StorageBucketName): void {
-  const maxBytes = bucket === 'avatars' ? MAX_AVATAR_FILE_BYTES : MAX_STANDARD_FILE_BYTES;
+  const maxBytes =
+    bucket === 'avatars'
+      ? MAX_AVATAR_FILE_BYTES
+      : bucket === 'product-videos'
+        ? MAX_VIDEO_FILE_BYTES
+        : MAX_STANDARD_FILE_BYTES;
   const allowedMimes =
     bucket === 'payment-proofs'
       ? ALLOWED_PROOF_MIME_TYPES
-      : bucket === 'store-assets'
-        ? [...ALLOWED_IMAGE_MIME_TYPES, 'image/svg+xml']
-        : ALLOWED_IMAGE_MIME_TYPES;
+      : bucket === 'product-videos'
+        ? ALLOWED_VIDEO_MIME_TYPES
+        : bucket === 'store-assets'
+          ? [...ALLOWED_IMAGE_MIME_TYPES, 'image/svg+xml']
+          : ALLOWED_IMAGE_MIME_TYPES;
 
   if (!allowedMimes.includes(file.type)) {
     throw new Error(

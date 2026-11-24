@@ -145,6 +145,7 @@ export interface Product {
   scheduled_discount_start: string | null;
   scheduled_discount_end: string | null;
   main_image_url: string;
+  video_url?: string | null;
   is_featured: boolean;
   is_new_arrival: boolean;
   is_best_seller: boolean;

@@ -19,6 +19,7 @@ import {
   Search,
   Instagram,
   Sparkles,
+  Video,
 } from 'lucide-react';
 import {
   fetchAllAdminProducts,
@@ -77,6 +78,8 @@ export const AdminProductsPage: React.FC = () => {
   const [scheduledStart, setScheduledStart] = useState('');
   const [scheduledEnd, setScheduledEnd] = useState('');
   const [mainImageUrl, setMainImageUrl] = useState('');
+  const [videoUrl, setVideoUrl] = useState('');
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
   const [additionalImages, setAdditionalImages] = useState<
     { image_url: string; alt_text?: string; display_order: number }[]
   >([]);
@@ -129,6 +132,7 @@ export const AdminProductsPage: React.FC = () => {
     setScheduledStart('');
     setScheduledEnd('');
     setMainImageUrl('');
+    setVideoUrl('');
     setAdditionalImages([]);
     setAvailableStock('15');
     setLowStockThreshold('5');
@@ -166,6 +170,7 @@ export const AdminProductsPage: React.FC = () => {
     );
     setScheduledEnd(prod.scheduled_discount_end ? prod.scheduled_discount_end.slice(0, 16) : '');
     setMainImageUrl(prod.main_image_url);
+    setVideoUrl(prod.video_url || '');
     setAdditionalImages(
       (prod.product_images || []).map((img, i) => ({
         image_url: img.image_url,
@@ -289,6 +294,7 @@ export const AdminProductsPage: React.FC = () => {
         scheduled_discount_start: scheduledStart ? new Date(scheduledStart).toISOString() : null,
         scheduled_discount_end: scheduledEnd ? new Date(scheduledEnd).toISOString() : null,
         main_image_url: mainImageUrl,
+        video_url: videoUrl.trim() || null,
         is_featured: isFeatured,
         is_new_arrival: isNewArrival,
         is_best_seller: isBestSeller,
@@ -689,6 +695,64 @@ export const AdminProductsPage: React.FC = () => {
                     </div>
                   ))}
                 </div>
+              )}
+            </div>
+
+            {/* Product Video (Optional) */}
+            <div className="space-y-3 pt-2 border-t border-[var(--ts-border-subtle)]">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--ts-text-secondary)]">
+                Product Video (Optional — MP4, WebM, MOV up to 50 MB or Video URL)
+              </p>
+              <div className="flex flex-wrap gap-3 items-center">
+                <input
+                  type="url"
+                  value={videoUrl}
+                  onChange={(e) => setVideoUrl(e.target.value)}
+                  placeholder="Paste video URL (MP4 / WebM) or upload below..."
+                  className="flex-1 min-w-[220px] bg-[var(--ts-bg-card)] border border-[var(--ts-border-strong)] px-3 py-2 text-xs text-[var(--ts-text-primary)]"
+                />
+                <label className="inline-flex items-center gap-2 border border-[var(--ts-border-strong)] bg-[var(--ts-bg-elevated)] px-4 py-2 text-xs uppercase tracking-widest text-[var(--ts-accent)] cursor-pointer hover:border-[var(--ts-accent)]">
+                  <Video className="w-3.5 h-3.5" />
+                  <span>{isUploadingVideo ? 'Uploading Video...' : 'Upload Video'}</span>
+                  <input
+                    type="file"
+                    accept="video/mp4,video/webm,video/quicktime"
+                    disabled={isUploadingVideo}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setError(null);
+                      setIsUploadingVideo(true);
+                      try {
+                        const res = await uploadFileToStorage('product-videos', file, 'products');
+                        setVideoUrl(res.url);
+                      } catch (err) {
+                        setError(err instanceof Error ? err.message : 'Video upload failed');
+                      } finally {
+                        setIsUploadingVideo(false);
+                      }
+                    }}
+                    className="hidden"
+                  />
+                </label>
+                {videoUrl && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setVideoUrl('')}
+                  >
+                    Remove Video
+                  </Button>
+                )}
+              </div>
+              {videoUrl && (
+                <video
+                  src={videoUrl}
+                  controls
+                  playsInline
+                  className="w-full max-w-sm max-h-56 border border-[var(--ts-border-strong)] bg-black"
+                />
               )}
             </div>
           </div>

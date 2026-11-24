@@ -19,6 +19,7 @@ import {
   Minus,
   Plus,
   CheckCircle2,
+  Play,
 } from 'lucide-react';
 import {
   fetchProductBySlug,
@@ -35,6 +36,7 @@ import {
   formatDate,
   getEffectivePrice,
   cn,
+  sanitizeHttpUrl,
 } from '@/lib/utils';
 import {
   Badge,
@@ -61,6 +63,7 @@ export const ProductDetailPage: React.FC = () => {
 
   // Gallery state
   const [activeImageUrl, setActiveImageUrl] = useState<string>('');
+  const [showVideo, setShowVideo] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
   const [zoomOrigin, setZoomOrigin] = useState({ x: 50, y: 50 });
 
@@ -258,43 +261,58 @@ export const ProductDetailPage: React.FC = () => {
 
       {/* Main Product Showcase */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-        {/* Left: Zoomable Image Gallery */}
+        {/* Left: Zoomable Image & Video Gallery */}
         <div className="lg:col-span-6 space-y-4">
-          <div
-            onClick={() => setIsZoomed((z) => !z)}
-            onMouseMove={handleMouseMoveZoom}
-            onMouseLeave={() => setIsZoomed(false)}
-            className="relative aspect-[4/5] w-full bg-[var(--ts-bg-elevated)] border border-[var(--ts-border-subtle)] overflow-hidden cursor-zoom-in group"
-          >
-            <img
-              src={activeImageUrl || product.main_image_url}
-              alt={product.name}
-              style={
-                isZoomed
-                  ? {
-                      transformOrigin: `${zoomOrigin.x}% ${zoomOrigin.y}%`,
-                      transform: 'scale(2)',
-                    }
-                  : undefined
-              }
-              className="w-full h-full object-cover transition-transform duration-200"
-            />
-            <div className="absolute bottom-3 right-3 bg-[var(--ts-bg-main)]/80 border border-[var(--ts-border-strong)] px-2.5 py-1 text-[10px] uppercase tracking-widest text-[var(--ts-text-secondary)] flex items-center gap-1.5 pointer-events-none">
-              <ZoomIn className="w-3.5 h-3.5 text-[var(--ts-accent)]" />
-              <span>{isZoomed ? 'Click to Reset' : 'Click to Zoom'}</span>
+          {showVideo && sanitizeHttpUrl(product.video_url) ? (
+            <div className="relative aspect-[4/5] w-full bg-black border border-[var(--ts-border-subtle)] overflow-hidden">
+              <video
+                src={sanitizeHttpUrl(product.video_url)!}
+                controls
+                autoPlay
+                playsInline
+                className="w-full h-full object-contain"
+              />
             </div>
-          </div>
+          ) : (
+            <div
+              onClick={() => setIsZoomed((z) => !z)}
+              onMouseMove={handleMouseMoveZoom}
+              onMouseLeave={() => setIsZoomed(false)}
+              className="relative aspect-[4/5] w-full bg-[var(--ts-bg-elevated)] border border-[var(--ts-border-subtle)] overflow-hidden cursor-zoom-in group"
+            >
+              <img
+                src={activeImageUrl || product.main_image_url}
+                alt={product.name}
+                style={
+                  isZoomed
+                    ? {
+                        transformOrigin: `${zoomOrigin.x}% ${zoomOrigin.y}%`,
+                        transform: 'scale(2)',
+                      }
+                    : undefined
+                }
+                className="w-full h-full object-cover transition-transform duration-200"
+              />
+              <div className="absolute bottom-3 right-3 bg-[var(--ts-bg-main)]/80 border border-[var(--ts-border-strong)] px-2.5 py-1 text-[10px] uppercase tracking-widest text-[var(--ts-text-secondary)] flex items-center gap-1.5 pointer-events-none">
+                <ZoomIn className="w-3.5 h-3.5 text-[var(--ts-accent)]" />
+                <span>{isZoomed ? 'Click to Reset' : 'Click to Zoom'}</span>
+              </div>
+            </div>
+          )}
 
-          {galleryImages.length > 1 && (
+          {(galleryImages.length > 1 || Boolean(sanitizeHttpUrl(product.video_url))) && (
             <div className="grid grid-cols-5 gap-3">
               {galleryImages.map((imgUrl, idx) => (
                 <button
                   key={imgUrl}
                   type="button"
-                  onClick={() => setActiveImageUrl(imgUrl)}
+                  onClick={() => {
+                    setShowVideo(false);
+                    setActiveImageUrl(imgUrl);
+                  }}
                   className={cn(
                     'aspect-square border overflow-hidden bg-[var(--ts-bg-elevated)] cursor-pointer transition-all',
-                    activeImageUrl === imgUrl
+                    !showVideo && activeImageUrl === imgUrl
                       ? 'border-[var(--ts-accent)] ring-1 ring-[var(--ts-accent)]'
                       : 'border-[var(--ts-border-subtle)] opacity-70 hover:opacity-100'
                   )}
@@ -306,6 +324,24 @@ export const ProductDetailPage: React.FC = () => {
                   />
                 </button>
               ))}
+              {sanitizeHttpUrl(product.video_url) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsZoomed(false);
+                    setShowVideo(true);
+                  }}
+                  className={cn(
+                    'aspect-square border overflow-hidden bg-black/80 cursor-pointer transition-all flex flex-col items-center justify-center gap-1 text-[var(--ts-accent)]',
+                    showVideo
+                      ? 'border-[var(--ts-accent)] ring-1 ring-[var(--ts-accent)]'
+                      : 'border-[var(--ts-border-subtle)] opacity-80 hover:opacity-100'
+                  )}
+                >
+                  <Play className="w-5 h-5" />
+                  <span className="text-[9px] uppercase tracking-widest">Video</span>
+                </button>
+              )}
             </div>
           )}
         </div>
