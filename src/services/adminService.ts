@@ -595,23 +595,15 @@ export async function syncInstagramProducts(limit = 12): Promise<InstagramSyncRe
     throw new Error('Administrator session expired. Please sign in again.');
   }
 
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-  const edgeBase =
-    (import.meta.env.VITE_EDGE_FUNCTIONS_URL as string | undefined) ||
-    `${supabaseUrl.replace(/\/$/, '')}/functions/v1`;
-
-  const res = await fetch(`${edgeBase}/instagram-ai-sync`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${session.access_token}`,
-    },
-    body: JSON.stringify({ limit }),
+  const { data, error } = await supabase.functions.invoke<InstagramSyncResult>('instagram-ai-sync', {
+    body: { limit },
   });
 
-  const payload = (await res.json()) as InstagramSyncResult;
-  if (!res.ok || !payload.ok) {
-    throw new Error(payload.error || 'Instagram AI sync failed.');
+  if (error) {
+    throw new Error(error.message || 'Instagram AI sync failed.');
   }
-  return payload;
+  if (!data || !data.ok) {
+    throw new Error(data?.error || 'Instagram AI sync failed.');
+  }
+  return data;
 }
