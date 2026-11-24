@@ -56,7 +56,7 @@ export const StorefrontLayout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--ts-bg-main)] text-[var(--ts-text-primary)] flex flex-col">
+    <div className="min-h-screen bg-[var(--ts-bg-main)] text-[var(--ts-text-primary)] flex flex-col overflow-x-clip">
       {/* Top Complimentary Shipping Announcement Bar */}
       <div className="bg-[var(--ts-bg-elevated)] border-b border-[var(--ts-border-subtle)] px-4 py-2 text-center">
         <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--ts-accent)]">
@@ -91,16 +91,16 @@ export const StorefrontLayout: React.FC = () => {
           </button>
 
           {/* Brand Logo */}
-          <Link to="/" className="flex items-center gap-3 group">
+          <Link to="/" className="flex items-center gap-2 sm:gap-3 group min-w-0">
             {storeSettings.logo_url ? (
               <img
                 src={storeSettings.logo_url}
                 alt={storeSettings.store_name}
-                className="h-8 w-auto object-contain"
+                className="h-7 sm:h-8 w-auto object-contain shrink-0"
               />
             ) : null}
-            <div className="flex flex-col">
-              <span className="font-serif-luxury text-2xl sm:text-3xl tracking-[0.26em] text-[var(--ts-text-primary)] group-hover:text-[var(--ts-accent)] transition-colors">
+            <div className="flex flex-col min-w-0">
+              <span className="font-serif-luxury text-lg sm:text-3xl tracking-[0.14em] sm:tracking-[0.26em] text-[var(--ts-text-primary)] group-hover:text-[var(--ts-accent)] transition-colors truncate">
                 {storeSettings.store_name || 'TIMESSELLERS'}
               </span>
               <span className="text-[8px] uppercase tracking-[0.35em] text-[var(--ts-text-muted)] hidden sm:block">

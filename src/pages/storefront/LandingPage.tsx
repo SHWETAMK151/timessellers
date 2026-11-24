@@ -29,12 +29,12 @@ export const LandingPage: React.FC = () => {
           <div className="absolute inset-0 bg-gradient-to-t from-[var(--ts-bg-main)] via-transparent to-[var(--ts-bg-main)]/60" />
         </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center w-full">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7 }}
-            className="lg:col-span-7 space-y-8"
+            className="lg:col-span-7 space-y-6 sm:space-y-8 min-w-0"
           >
             <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 border border-[var(--ts-accent)]/40 bg-[var(--ts-bg-card)]/80">
               <Sparkles className="w-3.5 h-3.5 text-[var(--ts-accent)]" />
@@ -68,24 +68,24 @@ export const LandingPage: React.FC = () => {
             </div>
 
             {/* Trust Pillars */}
-            <div className="pt-8 border-t border-[var(--ts-border-subtle)] grid grid-cols-3 gap-6 max-w-lg">
-              <div>
-                <p className="font-serif-luxury text-2xl text-[var(--ts-accent)]">100%</p>
-                <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--ts-text-muted)]">
+            <div className="pt-8 border-t border-[var(--ts-border-subtle)] grid grid-cols-3 gap-3 sm:gap-6 max-w-lg">
+              <div className="min-w-0">
+                <p className="font-serif-luxury text-lg sm:text-2xl text-[var(--ts-accent)]">100%</p>
+                <p className="text-[9px] sm:text-[10px] uppercase tracking-[0.12em] sm:tracking-[0.18em] text-[var(--ts-text-muted)]">
                   Inspected Quality
                 </p>
               </div>
-              <div>
-                <p className="font-serif-luxury text-2xl text-[var(--ts-accent)]">
+              <div className="min-w-0">
+                <p className="font-serif-luxury text-lg sm:text-2xl text-[var(--ts-accent)]">
                   {formatINR(shippingSettings.free_shipping_threshold)}+
                 </p>
-                <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--ts-text-muted)]">
+                <p className="text-[9px] sm:text-[10px] uppercase tracking-[0.12em] sm:tracking-[0.18em] text-[var(--ts-text-muted)]">
                   Free Insured Delivery
                 </p>
               </div>
-              <div>
-                <p className="font-serif-luxury text-2xl text-[var(--ts-accent)]">UPI &amp; Crypto</p>
-                <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--ts-text-muted)]">
+              <div className="min-w-0">
+                <p className="font-serif-luxury text-lg sm:text-2xl text-[var(--ts-accent)]">UPI &amp; Crypto</p>
+                <p className="text-[9px] sm:text-[10px] uppercase tracking-[0.12em] sm:tracking-[0.18em] text-[var(--ts-text-muted)]">
                   Verified Settlement
                 </p>
               </div>
