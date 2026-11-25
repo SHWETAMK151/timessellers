@@ -19,6 +19,7 @@ export const AdminLoginPage: React.FC = () => {
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [hpField, setHpField] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,6 +31,7 @@ export const AdminLoginPage: React.FC = () => {
 
   const handleAdminSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (hpField.trim().length > 0) return;
     setError(null);
     setIsSubmitting(true);
     try {
@@ -65,6 +67,16 @@ export const AdminLoginPage: React.FC = () => {
         {error && <ErrorBanner message={error} />}
 
         <form onSubmit={handleAdminSignIn} className="space-y-5">
+          <input
+            type="text"
+            name="company_website"
+            value={hpField}
+            onChange={(e) => setHpField(e.target.value)}
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+            className="sr-only"
+          />
           <div className="relative">
             <Input
               label="Admin Username"

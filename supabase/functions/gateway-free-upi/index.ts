@@ -54,6 +54,13 @@ Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
+  const contentLength = Number(req.headers.get('content-length') || 0);
+  if (contentLength > 32768) {
+    return new Response(JSON.stringify({ error: 'Payload too large.' }), {
+      status: 413,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');

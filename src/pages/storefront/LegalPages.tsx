@@ -76,10 +76,12 @@ export const ContactPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
+  const [hpField, setHpField] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (hpField.trim().length > 0) return;
     if (!name.trim() || !message.trim()) return;
     setSubmitted(true);
   };
@@ -156,6 +158,16 @@ export const ContactPage: React.FC = () => {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
+              <input
+                type="text"
+                name="company_website"
+                value={hpField}
+                onChange={(e) => setHpField(e.target.value)}
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                className="sr-only"
+              />
               <h2 className="font-serif-luxury text-2xl text-[var(--ts-text-primary)]">
                 Dispatch a Private Inquiry
               </h2>

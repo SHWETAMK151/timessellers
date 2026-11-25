@@ -119,6 +119,7 @@ export const CheckoutPage: React.FC = () => {
   const [upiMarkedPaid, setUpiMarkedPaid] = useState(false);
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [copiedExactAmt, setCopiedExactAmt] = useState(false);
+  const [hpField, setHpField] = useState('');
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [isUploadingProof, setIsUploadingProof] = useState(false);
   const [uploadedProofUrl, setUploadedProofUrl] = useState<string | null>(null);
@@ -251,6 +252,7 @@ export const CheckoutPage: React.FC = () => {
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (hpField.trim().length > 0) return;
     setError(null);
 
     if (!fullName.trim()) {
@@ -810,6 +812,16 @@ export const CheckoutPage: React.FC = () => {
       {error && <ErrorBanner message={error} />}
 
       <form onSubmit={handlePlaceOrder} className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        <input
+          type="text"
+          name="company_website"
+          value={hpField}
+          onChange={(e) => setHpField(e.target.value)}
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+          className="sr-only"
+        />
         {/* Left Column: Customer Info, Address & Payment Method */}
         <div className="lg:col-span-7 space-y-10">
           {/* 1. Saved Address Selector */}
