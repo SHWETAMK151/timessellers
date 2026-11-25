@@ -82,10 +82,11 @@ const DEFAULT_STORE_SETTINGS: StoreSettings = {
   supported_crypto_currencies: ['USDT (TRC20)', 'USDT (ERC20)', 'BTC', 'ETH', 'SOL'],
   currency_code: 'INR',
   currency_symbol: '₹',
-  contact_email: 'concierge@timessellers.com',
-  contact_phone: '+91 22 6000 8800',
+  contact_email: 'singhshwetank151@gmail.com',
+  contact_phone: '+91 94151 25878',
   contact_address:
     'Level 14, Prestige Palladium Bayan, Lower Parel, Mumbai, Maharashtra 400013, India',
+  instagram_handle: '@timeseller.in',
   about_story: null,
   shipping_policy_text: null,
   return_policy_text: null,

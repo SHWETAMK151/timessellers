@@ -410,6 +410,7 @@ export interface StoreSettings {
   contact_email: string;
   contact_phone: string;
   contact_address: string;
+  instagram_handle?: string | null;
   about_story: string | null;
   shipping_policy_text: string | null;
   return_policy_text: string | null;

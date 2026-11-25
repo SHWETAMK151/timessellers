@@ -14,6 +14,10 @@ import {
   X,
   ChevronDown,
   Database,
+  Instagram,
+  Phone,
+  Mail,
+  MessageCircle,
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useStoreSettings } from '@/context/StoreSettingsContext';
@@ -347,14 +351,15 @@ export const StorefrontLayout: React.FC = () => {
                 and acoustic instruments. Every creation is inspected and dispatched with insured
                 pan-India white-glove delivery.
               </p>
-              <div className="pt-2 text-xs text-[var(--ts-text-secondary)] space-y-1.5">
+              <div className="pt-2 text-xs text-[var(--ts-text-secondary)] space-y-2">
                 {storeSettings.contact_phone && (
                   <p>
                     <a
                       href={`tel:${storeSettings.contact_phone.replace(/[^\d+]/g, '')}`}
-                      className="hover:text-[var(--ts-accent)] transition-colors"
+                      className="inline-flex items-center gap-2 hover:text-[var(--ts-accent)] transition-colors"
                     >
-                      {storeSettings.contact_phone}
+                      <Phone className="w-3.5 h-3.5 text-[var(--ts-accent)] shrink-0" />
+                      <span>{storeSettings.contact_phone}</span>
                     </a>
                   </p>
                 )}
@@ -362,12 +367,46 @@ export const StorefrontLayout: React.FC = () => {
                   <p>
                     <a
                       href={`mailto:${storeSettings.contact_email}`}
-                      className="hover:text-[var(--ts-accent)] transition-colors break-all"
+                      className="inline-flex items-center gap-2 hover:text-[var(--ts-accent)] transition-colors break-all"
                     >
-                      {storeSettings.contact_email}
+                      <Mail className="w-3.5 h-3.5 text-[var(--ts-accent)] shrink-0" />
+                      <span>{storeSettings.contact_email}</span>
                     </a>
                   </p>
                 )}
+                <p>
+                  <a
+                    href={`https://www.instagram.com/${(storeSettings.instagram_handle || 'timeseller.in').replace(/^@/, '')}/`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 hover:text-[var(--ts-accent)] transition-colors"
+                  >
+                    <Instagram className="w-3.5 h-3.5 text-[var(--ts-accent)] shrink-0" />
+                    <span>{storeSettings.instagram_handle || '@timeseller.in'}</span>
+                  </a>
+                </p>
+                <div className="pt-2 flex flex-wrap gap-2">
+                  {storeSettings.contact_phone && (
+                    <a
+                      href={`https://wa.me/${storeSettings.contact_phone.replace(/\D/g, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[var(--ts-border-strong)] bg-[var(--ts-bg-card)] text-[10px] uppercase tracking-[0.16em] text-[var(--ts-text-primary)] hover:border-[var(--ts-accent)] hover:text-[var(--ts-accent)] transition-colors"
+                    >
+                      <MessageCircle className="w-3 h-3 text-[var(--ts-accent)]" />
+                      <span>WhatsApp</span>
+                    </a>
+                  )}
+                  <a
+                    href={`https://www.instagram.com/${(storeSettings.instagram_handle || 'timeseller.in').replace(/^@/, '')}/`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[var(--ts-border-strong)] bg-[var(--ts-bg-card)] text-[10px] uppercase tracking-[0.16em] text-[var(--ts-text-primary)] hover:border-[var(--ts-accent)] hover:text-[var(--ts-accent)] transition-colors"
+                  >
+                    <Instagram className="w-3 h-3 text-[var(--ts-accent)]" />
+                    <span>Instagram</span>
+                  </a>
+                </div>
               </div>
             </div>
 

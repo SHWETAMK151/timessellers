@@ -6,7 +6,7 @@
 // ==============================================================================
 
 import React, { useState } from 'react';
-import { ShieldCheck, Mail, Phone, MapPin, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, Mail, Phone, MapPin, CheckCircle2, Instagram, MessageCircle } from 'lucide-react';
 import { useStoreSettings } from '@/context/StoreSettingsContext';
 import { formatINR } from '@/lib/utils';
 import { Button, Input } from '@/components/ui/LuxuryPrimitives';
@@ -131,6 +131,23 @@ export const ContactPage: React.FC = () => {
             </div>
 
             <div className="flex items-start gap-3">
+              <Instagram className="w-4 h-4 text-[var(--ts-accent)] shrink-0 mt-1" />
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--ts-text-muted)]">
+                  Instagram
+                </p>
+                <a
+                  href={`https://www.instagram.com/${(storeSettings.instagram_handle || 'timeseller.in').replace(/^@/, '')}/`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-[var(--ts-text-primary)] hover:text-[var(--ts-accent)] transition-colors"
+                >
+                  {storeSettings.instagram_handle || '@timeseller.in'}
+                </a>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
               <MapPin className="w-4 h-4 text-[var(--ts-accent)] shrink-0 mt-1" />
               <div>
                 <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--ts-text-muted)]">
@@ -140,6 +157,41 @@ export const ContactPage: React.FC = () => {
                   {storeSettings.contact_address}
                 </p>
               </div>
+            </div>
+
+            <div className="pt-3 border-t border-[var(--ts-border-subtle)] grid grid-cols-2 gap-2.5">
+              <a
+                href={`tel:${(storeSettings.contact_phone || '').replace(/[^\d+]/g, '')}`}
+                className="flex items-center justify-center gap-2 border border-[var(--ts-border-strong)] bg-[var(--ts-bg-elevated)] px-3 py-2.5 text-[10px] uppercase tracking-[0.16em] text-[var(--ts-text-primary)] hover:border-[var(--ts-accent)] hover:text-[var(--ts-accent)] transition-colors"
+              >
+                <Phone className="w-3.5 h-3.5 text-[var(--ts-accent)]" />
+                <span>Call Now</span>
+              </a>
+              <a
+                href={`https://wa.me/${(storeSettings.contact_phone || '').replace(/\D/g, '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 border border-[var(--ts-border-strong)] bg-[var(--ts-bg-elevated)] px-3 py-2.5 text-[10px] uppercase tracking-[0.16em] text-[var(--ts-text-primary)] hover:border-[var(--ts-accent)] hover:text-[var(--ts-accent)] transition-colors"
+              >
+                <MessageCircle className="w-3.5 h-3.5 text-[var(--ts-accent)]" />
+                <span>WhatsApp</span>
+              </a>
+              <a
+                href={`mailto:${storeSettings.contact_email}`}
+                className="flex items-center justify-center gap-2 border border-[var(--ts-border-strong)] bg-[var(--ts-bg-elevated)] px-3 py-2.5 text-[10px] uppercase tracking-[0.16em] text-[var(--ts-text-primary)] hover:border-[var(--ts-accent)] hover:text-[var(--ts-accent)] transition-colors"
+              >
+                <Mail className="w-3.5 h-3.5 text-[var(--ts-accent)]" />
+                <span>Email Us</span>
+              </a>
+              <a
+                href={`https://www.instagram.com/${(storeSettings.instagram_handle || 'timeseller.in').replace(/^@/, '')}/`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 border border-[var(--ts-border-strong)] bg-[var(--ts-bg-elevated)] px-3 py-2.5 text-[10px] uppercase tracking-[0.16em] text-[var(--ts-text-primary)] hover:border-[var(--ts-accent)] hover:text-[var(--ts-accent)] transition-colors"
+              >
+                <Instagram className="w-3.5 h-3.5 text-[var(--ts-accent)]" />
+                <span>Instagram</span>
+              </a>
             </div>
           </div>
         </div>

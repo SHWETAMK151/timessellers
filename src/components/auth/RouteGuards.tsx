@@ -36,7 +36,7 @@ export const ProtectedCustomerRoute: React.FC<{ children: React.ReactNode }> = (
         <h2 className="font-serif-luxury text-2xl text-[var(--ts-text-primary)]">Account Access Restricted</h2>
         <p className="text-xs text-[var(--ts-text-secondary)] leading-relaxed">
           {profile.restriction_reason ||
-            'Your account has been restricted by our security compliance desk. Please contact concierge@timessellers.com for assistance.'}
+            'Your account has been restricted by our security compliance desk. Please contact singhshwetank151@gmail.com for assistance.'}
         </p>
         <Button variant="outline" size="sm" onClick={() => void signOut()}>
           Sign Out
