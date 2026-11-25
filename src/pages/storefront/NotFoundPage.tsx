@@ -29,7 +29,7 @@ export const NotFoundPage: React.FC = () => {
             Return Home
           </Button>
         </Link>
-        <Link to="/shop">
+        <Link to="/collections">
           <Button variant="outline" size="md">
             Browse Collections
           </Button>

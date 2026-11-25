@@ -125,7 +125,7 @@ export const StorefrontLayout: React.FC = () => {
             </NavLink>
 
             <NavLink
-              to="/shop"
+              to="/collections"
               className={({ isActive }) =>
                 `text-xs uppercase tracking-[0.2em] transition-colors ${
                   isActive ? 'text-[var(--ts-accent)]' : 'text-[var(--ts-text-secondary)] hover:text-[var(--ts-accent)]'

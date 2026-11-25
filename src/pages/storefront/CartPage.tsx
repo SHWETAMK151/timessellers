@@ -85,7 +85,7 @@ export const CartPage: React.FC = () => {
           description="Explore our horological collections, fine leather goods, rare perfumes, and luxury objects to add creations to your bag."
           icon={<ShoppingBag className="w-5 h-5" />}
           action={
-            <Link to="/shop">
+            <Link to="/collections">
               <Button variant="gold" size="md" rightIcon={<ArrowRight className="w-4 h-4" />}>
                 Explore Collections
               </Button>
