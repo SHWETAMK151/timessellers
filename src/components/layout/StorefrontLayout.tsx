@@ -270,7 +270,7 @@ export const StorefrontLayout: React.FC = () => {
                 Home
               </Link>
               <Link
-                to="/shop"
+                to="/collections"
                 onClick={() => setMobileMenuOpen(false)}
                 className="text-xs uppercase tracking-[0.2em] text-[var(--ts-text-primary)] py-1.5"
               >
@@ -463,7 +463,7 @@ export const StorefrontLayout: React.FC = () => {
                   </Link>
                 </li>
                 <li>
-                  <Link to="/shop" className="hover:text-[var(--ts-accent)] transition-colors">
+                  <Link to="/collections" className="hover:text-[var(--ts-accent)] transition-colors">
                     Browse Collections
                   </Link>
                 </li>

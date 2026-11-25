@@ -56,12 +56,12 @@ export const LandingPage: React.FC = () => {
             </p>
 
             <div className="flex flex-wrap items-center gap-4 pt-2">
-              <Link to="/shop">
+              <Link to="/collections">
                 <Button variant="gold" size="lg" rightIcon={<ArrowRight className="w-4 h-4" />}>
                   Shop Now
                 </Button>
               </Link>
-              <Link to="/shop">
+              <Link to="/collections">
                 <Button variant="outline" size="lg">
                   Explore Collection
                 </Button>

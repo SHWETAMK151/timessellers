@@ -27,6 +27,9 @@ const LandingPage = lazy(() =>
 const ShopPage = lazy(() =>
   import('@/pages/storefront/ShopPage').then((m) => ({ default: m.ShopPage }))
 );
+const CollectionsPage = lazy(() =>
+  import('@/pages/storefront/CollectionsPage').then((m) => ({ default: m.CollectionsPage }))
+);
 const ProductDetailPage = lazy(() =>
   import('@/pages/storefront/ProductDetailPage').then((m) => ({
     default: m.ProductDetailPage,
@@ -164,6 +167,10 @@ const ROUTE_META: Record<string, { title: string; description: string }> = {
     description:
       'Discover precision chronographs, Italian leather goods, rare extrait de parfum, titanium eyewear, and bespoke objects across India.',
   },
+  '/collections': {
+    title: 'Select Category | TIMESSELLERS',
+    description: 'Choose a luxury department to explore curated creations at TIMESSELLERS.',
+  },
   '/shop': {
     title: 'Collections | TIMESSELLERS',
     description:
@@ -277,6 +284,7 @@ export const App: React.FC = () => {
                 {/* EXPERIENCE A & B: PUBLIC STOREFRONT & PROTECTED CUSTOMER DASHBOARD */}
                 <Route element={<StorefrontLayout />}>
                   <Route path="/" element={<LandingPage />} />
+                  <Route path="/collections" element={<CollectionsPage />} />
                   <Route path="/shop" element={<ShopPage />} />
                   <Route path="/shop/:category" element={<ShopPage />} />
                   <Route path="/product/:slug" element={<ProductDetailPage />} />
