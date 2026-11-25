@@ -27,7 +27,7 @@ import {
 import { uploadFileToStorage } from '@/services/storageService';
 import { useStoreSettings, LUXURY_THEMES } from '@/context/StoreSettingsContext';
 import { useAuth } from '@/context/AuthContext';
-import { formatDate, formatINR, cn } from '@/lib/utils';
+import { formatDate, formatINR, cn, ADMIN_LOGIN_PATH } from '@/lib/utils';
 import { SalesSeriesChart } from '@/pages/admin/AdminOverviewPage';
 import {
   Badge,
@@ -839,7 +839,7 @@ export const AdminSettingsPage: React.FC = () => {
           </h2>
           <p className="text-xs text-[var(--ts-text-muted)]">
             Manage the username and bcrypt-hashed password used to sign in directly at{' '}
-            <code>/admin/login</code>.
+            <code>{ADMIN_LOGIN_PATH}</code>.
           </p>
         </div>
 

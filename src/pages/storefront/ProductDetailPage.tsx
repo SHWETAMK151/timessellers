@@ -90,6 +90,9 @@ export const ProductDetailPage: React.FC = () => {
       setProduct(prod);
       if (prod) {
         setActiveImageUrl(prod.main_image_url);
+        setShowVideo(false);
+        setIsZoomed(false);
+        setQuantity(1);
         const activeVariants = prod.product_variants?.filter((v) => v.is_active) ?? [];
         if (activeVariants.length > 0) {
           setSelectedVariant(activeVariants[0]);

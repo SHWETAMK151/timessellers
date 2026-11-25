@@ -7,9 +7,9 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { Search, Truck, CheckCircle2, Clock, Package } from 'lucide-react';
+import { Search, Truck, CheckCircle2, Clock, Package, ExternalLink } from 'lucide-react';
 import { fetchGuestOrderDetails } from '@/services/orderService';
-import { formatDate, formatINR, cn } from '@/lib/utils';
+import { formatDate, formatINR, cn, sanitizeHttpUrl } from '@/lib/utils';
 import {
   Badge,
   Button,
@@ -203,12 +203,25 @@ export const TrackOrderPage: React.FC = () => {
             </div>
 
             {order.tracking_number && (
-              <div className="flex items-center gap-3 text-xs p-3.5 border border-[var(--ts-border-strong)] bg-[var(--ts-bg-elevated)]">
-                <Truck className="w-4 h-4 text-[var(--ts-accent)]" />
-                <span>
-                  {order.courier_partner ? `${order.courier_partner} • ` : ''}
-                  AWB Tracking: <strong className="font-mono">{order.tracking_number}</strong>
-                </span>
+              <div className="flex flex-wrap items-center justify-between gap-3 text-xs p-3.5 border border-[var(--ts-border-strong)] bg-[var(--ts-bg-elevated)]">
+                <div className="flex items-center gap-3">
+                  <Truck className="w-4 h-4 text-[var(--ts-accent)] shrink-0" />
+                  <span>
+                    {order.courier_partner ? `${order.courier_partner} • ` : ''}
+                    AWB Tracking: <strong className="font-mono">{order.tracking_number}</strong>
+                  </span>
+                </div>
+                {sanitizeHttpUrl(order.tracking_url) && (
+                  <a
+                    href={sanitizeHttpUrl(order.tracking_url)!}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[var(--ts-accent)] hover:underline font-medium"
+                  >
+                    <span>Track Shipment</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                )}
               </div>
             )}
 

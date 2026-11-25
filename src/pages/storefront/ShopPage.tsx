@@ -70,6 +70,11 @@ export const ShopPage: React.FC = () => {
   }, [searchQuery]);
 
   useEffect(() => {
+    setMinPriceInput(minPriceParam);
+    setMaxPriceInput(maxPriceParam);
+  }, [minPriceParam, maxPriceParam]);
+
+  useEffect(() => {
     if (!isSupabaseConfigured) return;
     fetchActiveCategories()
       .then(setCategories)
