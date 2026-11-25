@@ -104,10 +104,12 @@ export const ContactPage: React.FC = () => {
               <Phone className="w-4 h-4 text-[var(--ts-accent)] shrink-0 mt-1" />
               <div>
                 <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--ts-text-muted)]">
-                  Direct Telephone
+                  WhatsApp &amp; Telephone
                 </p>
                 <a
-                  href={`tel:${(storeSettings.contact_phone || '').replace(/[^\d+]/g, '')}`}
+                  href={`https://wa.me/${(storeSettings.contact_phone || '').replace(/\D/g, '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-sm text-[var(--ts-text-primary)] hover:text-[var(--ts-accent)] transition-colors"
                 >
                   {storeSettings.contact_phone}

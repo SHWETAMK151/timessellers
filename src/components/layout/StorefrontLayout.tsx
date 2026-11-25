@@ -355,11 +355,13 @@ export const StorefrontLayout: React.FC = () => {
                 {storeSettings.contact_phone && (
                   <p>
                     <a
-                      href={`tel:${storeSettings.contact_phone.replace(/[^\d+]/g, '')}`}
+                      href={`https://wa.me/${storeSettings.contact_phone.replace(/\D/g, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 hover:text-[var(--ts-accent)] transition-colors"
                     >
                       <Phone className="w-3.5 h-3.5 text-[var(--ts-accent)] shrink-0" />
-                      <span>{storeSettings.contact_phone}</span>
+                      <span>{storeSettings.contact_phone} (WhatsApp)</span>
                     </a>
                   </p>
                 )}
@@ -397,6 +399,15 @@ export const StorefrontLayout: React.FC = () => {
                       <span>WhatsApp</span>
                     </a>
                   )}
+                  {storeSettings.contact_email && (
+                    <a
+                      href={`mailto:${storeSettings.contact_email}`}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[var(--ts-border-strong)] bg-[var(--ts-bg-card)] text-[10px] uppercase tracking-[0.16em] text-[var(--ts-text-primary)] hover:border-[var(--ts-accent)] hover:text-[var(--ts-accent)] transition-colors"
+                    >
+                      <Mail className="w-3 h-3 text-[var(--ts-accent)]" />
+                      <span>Email</span>
+                    </a>
+                  )}
                   <a
                     href={`https://www.instagram.com/${(storeSettings.instagram_handle || 'timeseller.in').replace(/^@/, '')}/`}
                     target="_blank"
@@ -406,6 +417,12 @@ export const StorefrontLayout: React.FC = () => {
                     <Instagram className="w-3 h-3 text-[var(--ts-accent)]" />
                     <span>Instagram</span>
                   </a>
+                  <Link
+                    to="/contact"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[var(--ts-accent)]/60 bg-[var(--ts-bg-accent-tint)] text-[10px] uppercase tracking-[0.16em] text-[var(--ts-accent)] hover:bg-[var(--ts-accent)] hover:text-[var(--ts-on-accent)] transition-colors"
+                  >
+                    <span>Contact Us</span>
+                  </Link>
                 </div>
               </div>
             </div>
