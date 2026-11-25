@@ -201,8 +201,16 @@ const ROUTE_META: Record<string, { title: string; description: string }> = {
     title: 'Privacy Policy | TIMESSELLERS',
     description: 'How TIMESSELLERS protects your personal order and contact information.',
   },
+  '/privacy': {
+    title: 'Privacy Policy | TIMESSELLERS',
+    description: 'How TIMESSELLERS protects your personal order and contact information.',
+  },
   '/terms': {
-    title: 'Terms & Conditions | TIMESSELLERS',
+    title: 'Terms of Service | TIMESSELLERS',
+    description: 'Terms of service, pricing, and settlement policies for TIMESSELLERS.',
+  },
+  '/tos': {
+    title: 'Terms of Service | TIMESSELLERS',
     description: 'Terms of service, pricing, and settlement policies for TIMESSELLERS.',
   },
 };
@@ -283,7 +291,9 @@ export const App: React.FC = () => {
                   <Route path="/shipping-policy" element={<ShippingPolicyPage />} />
                   <Route path="/return-policy" element={<ReturnPolicyPage />} />
                   <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+                  <Route path="/privacy" element={<PrivacyPolicyPage />} />
                   <Route path="/terms" element={<TermsPage />} />
+                  <Route path="/tos" element={<TermsPage />} />
 
                   {/* Protected Customer Dashboard */}
                   <Route

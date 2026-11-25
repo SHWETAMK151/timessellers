@@ -371,7 +371,7 @@ export const PrivacyPolicyPage: React.FC = () => {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-16 space-y-8">
       <div className="space-y-2 border-b border-[var(--ts-border-subtle)] pb-6">
         <p className="text-[10px] uppercase tracking-[0.28em] text-[var(--ts-accent)]">
-          Data Protection
+          Data Protection • Effective {new Date().getFullYear()}
         </p>
         <h1 className="font-serif-luxury text-4xl text-[var(--ts-text-primary)]">
           Privacy Policy
@@ -384,20 +384,52 @@ export const PrivacyPolicyPage: React.FC = () => {
         ) : (
           <>
             <p>
-              <strong>1. Information We Collect:</strong> We collect your phone number for OTP
-              authentication, full name, optional email address, Indian delivery addresses, and
-              payment transaction references (UTR numbers or cryptocurrency transaction hashes)
-              strictly to fulfill your orders.
+              <strong>1. Information We Collect:</strong> When you place an order on{' '}
+              <strong>{storeSettings.store_name || 'TIMESSELLERS'}</strong>, we collect your full
+              name, mobile phone number, optional email address, Indian delivery address (including
+              PIN code), and payment confirmation details (such as your uploaded UPI payment
+              screenshot or cryptocurrency transaction reference) strictly to process, verify, and
+              deliver your order.
             </p>
             <p>
-              <strong>2. Row Level Security (RLS) Isolation:</strong> All customer profiles, saved
-              addresses, shopping carts, orders, and payment records are isolated at the PostgreSQL
-              database engine level using Supabase Row Level Security. No customer can ever read or
-              modify another customer’s records.
+              <strong>2. How We Use Your Data:</strong> Your contact and address details are used
+              solely for order verification, insured courier dispatch, order tracking lookups, and
+              customer support via{' '}
+              <a
+                href={`mailto:${storeSettings.contact_email}`}
+                className="text-[var(--ts-accent)] hover:underline"
+              >
+                {storeSettings.contact_email}
+              </a>{' '}
+              or{' '}
+              <a
+                href={`tel:${(storeSettings.contact_phone || '').replace(/[^\d+]/g, '')}`}
+                className="text-[var(--ts-accent)] hover:underline"
+              >
+                {storeSettings.contact_phone}
+              </a>
+              . We never sell, rent, or trade your personal information to third-party marketers.
             </p>
             <p>
-              <strong>3. Zero Credential Exposure:</strong> We never store sensitive payment keys,
-              bank passwords, or private wallet seeds.
+              <strong>3. Payment Proof &amp; Storage Security:</strong> Uploaded UPI payment
+              screenshots are stored in a private, access-controlled Supabase Storage bucket
+              accessible only to authorized store administrators for manual payment verification.
+              All database records are protected by PostgreSQL Row Level Security (RLS).
+            </p>
+            <p>
+              <strong>4. Zero Credential Exposure:</strong> We never collect or store your UPI PIN,
+              bank passwords, card CVVs, or private cryptocurrency wallet seeds.
+            </p>
+            <p>
+              <strong>5. Data Deletion &amp; Contact:</strong> To request correction or deletion of
+              your order contact data, write to{' '}
+              <a
+                href={`mailto:${storeSettings.contact_email}`}
+                className="text-[var(--ts-accent)] hover:underline"
+              >
+                {storeSettings.contact_email}
+              </a>{' '}
+              with your Order Number.
             </p>
           </>
         )}
@@ -413,10 +445,10 @@ export const TermsPage: React.FC = () => {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-16 space-y-8">
       <div className="space-y-2 border-b border-[var(--ts-border-subtle)] pb-6">
         <p className="text-[10px] uppercase tracking-[0.28em] text-[var(--ts-accent)]">
-          Governing Conditions
+          Governing Conditions • Effective {new Date().getFullYear()}
         </p>
         <h1 className="font-serif-luxury text-4xl text-[var(--ts-text-primary)]">
-          Terms &amp; Conditions
+          Terms of Service &amp; Conditions
         </h1>
       </div>
 
@@ -426,21 +458,47 @@ export const TermsPage: React.FC = () => {
         ) : (
           <>
             <p>
-              <strong>1. Server-Authoritative Pricing:</strong> All product prices, discounts, and
-              shipping fees are calculated server-side in Indian Rupees (INR). Any attempt to
-              manipulate client-side payloads is rejected by our database RPC functions.
+              <strong>1. Acceptance of Terms:</strong> By accessing or placing an order on{' '}
+              <strong>{storeSettings.store_name || 'TIMESSELLERS'}</strong>, you agree to be bound
+              by these Terms of Service, our Shipping Policy, Return &amp; Refund Policy, and
+              Privacy Policy.
             </p>
             <p>
-              <strong>2. Payment Verification &amp; Order Confirmation:</strong> Submitting a UPI
-              UTR number or screenshot places an order into <em>Payment Verification</em> status.
-              An order becomes legally binding and confirmed only after independent verification of
-              funds by our treasury desk or cryptographic verification of an HMAC-signed provider
-              webhook. Duplicate UTR submissions are strictly prohibited.
+              <strong>2. Server-Authoritative Pricing &amp; Availability:</strong> All product
+              prices, discounts, and shipping charges are calculated server-side in Indian Rupees
+              (INR). Any attempt to alter prices or quantities client-side is automatically rejected.
+              Orders are subject to live stock availability.
             </p>
             <p>
-              <strong>3. Authenticity &amp; Warranties:</strong> All goods are sold with accurate
-              condition and specification disclosures. Applicable warranty terms are detailed per
-              item on its specification page.
+              <strong>3. UPI Screenshot Verification &amp; Order Confirmation:</strong> When paying
+              via UPI QR, uploading your payment screenshot places your order into{' '}
+              <em>Payment Verification</em> status. An order is confirmed and scheduled for dispatch
+              only after our team manually verifies receipt of funds (or after cryptographic webhook
+              confirmation for cryptocurrency payments). Submitting falsified or duplicate payment
+              proofs will result in immediate order cancellation.
+            </p>
+            <p>
+              <strong>4. Shipping, Risk &amp; Returns:</strong> Insured delivery is dispatched across
+              serviceable Indian PIN codes. Eligible returns must follow our 7-day inspection window
+              and retain all original seals, tags, and packaging.
+            </p>
+            <p>
+              <strong>5. Limitation of Liability &amp; Governing Law:</strong> These Terms are
+              governed by the laws of India. For any dispute or support query, please reach out to{' '}
+              <a
+                href={`mailto:${storeSettings.contact_email}`}
+                className="text-[var(--ts-accent)] hover:underline"
+              >
+                {storeSettings.contact_email}
+              </a>{' '}
+              or{' '}
+              <a
+                href={`tel:${(storeSettings.contact_phone || '').replace(/[^\d+]/g, '')}`}
+                className="text-[var(--ts-accent)] hover:underline"
+              >
+                {storeSettings.contact_phone}
+              </a>
+              .
             </p>
           </>
         )}
